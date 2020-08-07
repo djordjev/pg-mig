@@ -11,11 +11,7 @@
       "mode": "auto",
       "program": "${workspaceFolder}/cmd/pg-mig/main.go",
       "env": {},
-      "args": [
-        "init",
-        "-name=example-postgres",
-        "-credentials=postgres@postgres"
-      ]
+      "args": ["init", "-name=main_db", "-credentials=postgres:pg_pass"]
     }
   ]
 }

@@ -1,0 +1,6 @@
+version: "2"
+
+tasks:
+  build:
+    cmds:
+      - go build -o ./build/pg-mig ./cmd/pg-mig/main.go

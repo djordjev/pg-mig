@@ -1,4 +1,4 @@
-package commands
+package utils
 
 import (
 	"encoding/json"
@@ -11,6 +11,8 @@ type Config struct {
 	Path        string `json:"path"`
 	DbURL       string `json:"db_url"`
 	Credentials string `json:"credentials"`
+	Port        int    `json:"port"`
+	SSL         string `json:"ssl_mode"`
 }
 
 const configFileName = "pgmig.config.json"

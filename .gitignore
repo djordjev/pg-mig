@@ -15,3 +15,5 @@
 # vendor/
 
 main
+build
+cmd/pg-mig/pgmig.config.json

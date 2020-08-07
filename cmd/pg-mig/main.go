@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/djordjev/pg-mig/v2/commands"
+	"github.com/djordjev/pg-mig/commands"
 )
 
 const cmdInit = "init"
