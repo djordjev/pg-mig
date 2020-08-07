@@ -19,7 +19,17 @@ func GetDBConnection(config utils.Config) (*pgx.Conn, error) {
 		return nil, err
 	}
 
-	conn.Exec(context.Background(), "CREATE TABLE test (id SERIAL PRIMARY KEY )")
+	const createTable = `
+		create table if not exists __pg_mig_meta (
+			id serial primary key,
+			ts timestamp not null
+		)
+	`
+	_, err = conn.Exec(context.Background(), createTable)
+
+	if err != nil {
+		return nil, err
+	}
 
 	return conn, nil
 }

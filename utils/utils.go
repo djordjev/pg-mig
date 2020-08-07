@@ -3,6 +3,7 @@ package utils
 import (
 	"encoding/json"
 	"io/ioutil"
+	"os"
 )
 
 // Config JSON type for storing database configuration
@@ -19,6 +20,11 @@ const configFileName = "pgmig.config.json"
 
 // Store - saves configuration in json file
 func (config *Config) Store() error {
+	err := os.Remove(configFileName)
+	if err != nil {
+		return err
+	}
+
 	data, err := json.Marshal(config)
 	if err != nil {
 		return err
