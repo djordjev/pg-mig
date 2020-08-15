@@ -45,6 +45,16 @@ func (suite *UtilsSuite) TestLoadWithFile() {
 	suite.Require().Equal(config.SSL, "disable")
 }
 
+func (suite *UtilsSuite) TestLoadInvalidFormat() {
+	config := Config{}
+
+	afero.WriteFile(Fs, configFileName, []byte("not a json"), 0644)
+
+	err := config.Load()
+
+	suite.Require().NotNil(err)
+}
+
 func (suite *UtilsSuite) TestStoreSavesConfig() {
 	config := Config{
 		Credentials: "Credentials",

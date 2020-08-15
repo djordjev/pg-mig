@@ -10,3 +10,7 @@ tasks:
   coverage:
     cmds:
       - go test -cover ./...
+  test_report:
+    cmds:
+      - go test -coverprofile=coverage/coverage.out ./...
+      - go tool cover -html=coverage/coverage.out
