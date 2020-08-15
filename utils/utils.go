@@ -2,9 +2,12 @@ package utils
 
 import (
 	"encoding/json"
-	"io/ioutil"
-	"os"
+
+	"github.com/spf13/afero"
 )
+
+// Fs Setting up file system
+var Fs = afero.NewOsFs()
 
 // Config JSON type for storing database configuration
 type Config struct {
@@ -20,9 +23,19 @@ const configFileName = "pgmig.config.json"
 
 // Store - saves configuration in json file
 func (config *Config) Store() error {
-	err := os.Remove(configFileName)
+	afs := &afero.Afero{Fs: Fs}
+	exists, err := afs.Exists(configFileName)
+
 	if err != nil {
 		return err
+	}
+
+	if exists {
+		err = afs.Remove(configFileName)
+
+		if err != nil {
+			return err
+		}
 	}
 
 	data, err := json.Marshal(config)
@@ -30,7 +43,7 @@ func (config *Config) Store() error {
 		return err
 	}
 
-	err = ioutil.WriteFile(configFileName, data, 0644)
+	err = afs.WriteFile(configFileName, data, 0644)
 	if err != nil {
 		return err
 	}
@@ -40,7 +53,9 @@ func (config *Config) Store() error {
 
 // Load - reads previously stored config file from current dir
 func (config *Config) Load() error {
-	data, err := ioutil.ReadFile(configFileName)
+	afs := &afero.Afero{Fs: Fs}
+	data, err := afs.ReadFile(configFileName)
+
 	if err != nil {
 		return err
 	}

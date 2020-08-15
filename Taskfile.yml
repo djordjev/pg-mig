@@ -4,3 +4,9 @@ tasks:
   build:
     cmds:
       - go build -o ./build/pg-mig ./cmd/pg-mig/main.go
+  test:
+    cmds:
+      - go test ./...
+  coverage:
+    cmds:
+      - go test -cover ./...
