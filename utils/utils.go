@@ -2,6 +2,8 @@ package utils
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 
 	"github.com/spf13/afero"
 )
@@ -66,4 +68,16 @@ func (config *Config) Load() error {
 	}
 
 	return nil
+}
+
+// GetConnectionString returns string for connecting on DB
+func (config *Config) GetConnectionString() (string, error) {
+
+	if config.Credentials == "" || config.DbName == "" || config.DbURL == "" || config.Port == 0 {
+		return "", errors.New("Invalid data in config file")
+	}
+
+	connectionString := fmt.Sprintf("postgres://%s@%s:%d/%s?sslmode=%s", config.Credentials, config.DbURL, config.Port, config.DbName, config.SSL)
+
+	return connectionString, nil
 }

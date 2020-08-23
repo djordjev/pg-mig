@@ -4,13 +4,12 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/djordjev/pg-mig/commands"
+	"github.com/djordjev/pg-mig/subcommands"
+	"github.com/spf13/afero"
 )
 
 const cmdInit = "init"
 const cmdHelp = "help"
-
-type command = func() error
 
 func main() {
 
@@ -19,29 +18,16 @@ func main() {
 		return
 	}
 
-	cmd := getCommand()
-	if cmd != nil {
-		err := cmd()
-		if err != nil {
-			fmt.Println(err)
-		}
-	} else {
-		fmt.Println(fmt.Sprintf("Invalid argument %s", os.Args[1]))
-	}
-}
-
-func getCommand() command {
-	switch os.Args[1] {
-	case cmdInit:
-		{
-			return commands.Initialize
-		}
-
-	case cmdHelp:
-		{
-			return commands.Help
-		}
+	runner := subcommands.Runner{
+		Subcommand: os.Args[1],
+		Flags:      os.Args[2:],
+		Filesystem: afero.NewOsFs(),
 	}
 
-	return nil
+	err := runner.Run()
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	return
 }
