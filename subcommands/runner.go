@@ -31,7 +31,7 @@ func (runner *Runner) Run() error {
 		}
 	}
 
-	config := utils.Config{}
+	config := utils.Config{Filesystem: runner.Filesystem}
 	err := config.Load()
 	if err != nil {
 		return err

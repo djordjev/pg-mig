@@ -11,6 +11,7 @@ import (
 type UtilsSuite struct {
 	suite.Suite
 	configContent string
+	Filesystem    afero.Fs
 }
 
 func (suite *UtilsSuite) SetupSuite() {
@@ -18,20 +19,20 @@ func (suite *UtilsSuite) SetupSuite() {
 }
 
 func (suite *UtilsSuite) SetupTest() {
-	Fs = afero.NewMemMapFs()
+	suite.Filesystem = afero.NewMemMapFs()
 }
 
 func (suite *UtilsSuite) TestLoadNoFile() {
-	config := Config{}
+	config := Config{Filesystem: suite.Filesystem}
 	err := config.Load()
 
 	suite.Require().NotNil(err)
 }
 
 func (suite *UtilsSuite) TestLoadWithFile() {
-	config := Config{}
+	config := Config{Filesystem: suite.Filesystem}
 
-	afero.WriteFile(Fs, configFileName, []byte(suite.configContent), 0644)
+	afero.WriteFile(suite.Filesystem, configFileName, []byte(suite.configContent), 0644)
 
 	err := config.Load()
 
@@ -46,9 +47,9 @@ func (suite *UtilsSuite) TestLoadWithFile() {
 }
 
 func (suite *UtilsSuite) TestLoadInvalidFormat() {
-	config := Config{}
+	config := Config{Filesystem: suite.Filesystem}
 
-	afero.WriteFile(Fs, configFileName, []byte("not a json"), 0644)
+	afero.WriteFile(suite.Filesystem, configFileName, []byte("not a json"), 0644)
 
 	err := config.Load()
 
@@ -63,15 +64,17 @@ func (suite *UtilsSuite) TestStoreSavesConfig() {
 		Path:        "Path",
 		Port:        1234,
 		SSL:         "SSL",
+
+		Filesystem: suite.Filesystem,
 	}
 
-	afero.WriteFile(Fs, configFileName, []byte("wrong content"), 0777)
+	afero.WriteFile(suite.Filesystem, configFileName, []byte("wrong content"), 0777)
 
 	err := config.Store()
 
 	suite.Require().Nil(err)
 
-	bytesContent, err := afero.ReadFile(Fs, configFileName)
+	bytesContent, err := afero.ReadFile(suite.Filesystem, configFileName)
 	if err != nil {
 		suite.Fail("Can't read written config file")
 		return
