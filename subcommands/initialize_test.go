@@ -1,36 +1,26 @@
 package subcommands_test
 
 import (
-	"context"
 	"errors"
+	"github.com/djordjev/pg-mig/testutils"
 	"testing"
 
 	"github.com/djordjev/pg-mig/models"
 	"github.com/djordjev/pg-mig/subcommands"
 	"github.com/djordjev/pg-mig/utils"
-	"github.com/jackc/pgconn"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
 
-type MockDBConnection struct {
-	mock.Mock
-}
-
-func (conn *MockDBConnection) Exec(ctx context.Context, sql string, arguments ...interface{}) (pgconn.CommandTag, error) {
-	args := conn.Called(ctx, sql, arguments)
-	return nil, args.Error(1)
-}
-
 type InitializeSuite struct {
 	suite.Suite
 	base   subcommands.CommandBase
-	mockDB MockDBConnection
+	mockDB testutils.MockDBConnection
 }
 
 func (suite *InitializeSuite) SetupTest() {
-	suite.mockDB = MockDBConnection{}
+	suite.mockDB = testutils.NewMockedDBConnection()
 
 	suite.base = subcommands.CommandBase{
 		Models:     models.Models{Db: &suite.mockDB},
@@ -62,6 +52,6 @@ func (suite *InitializeSuite) TestCreateTableError() {
 	suite.mockDB.MethodCalled("Exec")
 }
 
-func TestIntializeSuite(t *testing.T) {
+func TestInitializeSuite(t *testing.T) {
 	suite.Run(t, new(InitializeSuite))
 }
