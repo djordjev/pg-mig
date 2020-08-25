@@ -111,6 +111,8 @@ func (runner *Runner) createInitFile() error {
 		Path:        *path,
 		SSL:         *useSSL,
 		Port:        *port,
+
+		Filesystem: runner.Filesystem,
 	}
 
 	err = config.Store()

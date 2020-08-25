@@ -99,6 +99,30 @@ func (suite *UtilsSuite) TestStoreSavesConfig() {
 	suite.Require().True(hasCredientials >= 0)
 }
 
+func (suite *UtilsSuite) TestGetConnectionString() {
+	config := Config{
+		Credentials: "Credentials",
+		DbName:      "DbName",
+		DbURL:       "DbURL",
+		Path:        "Path",
+		Port:        1234,
+		SSL:         "SSL",
+
+		Filesystem: suite.Filesystem,
+	}
+
+	connectionString, err := config.GetConnectionString()
+
+	suite.Require().Nil(err)
+	suite.Require().Equal(connectionString, "postgres://Credentials@DbURL:1234/DbName?sslmode=SSL")
+
+	config.Credentials = ""
+	connectionString, err = config.GetConnectionString()
+
+	suite.Require().Empty(connectionString)
+	suite.Require().NotNil(err)
+}
+
 func TestUtilsSuite(t *testing.T) {
 	suite.Run(t, new(UtilsSuite))
 }
