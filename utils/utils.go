@@ -73,7 +73,7 @@ func (config *Config) Load() error {
 func (config *Config) GetConnectionString() (string, error) {
 
 	if config.Credentials == "" || config.DbName == "" || config.DbURL == "" || config.Port == 0 {
-		return "", errors.New("Invalid data in config file")
+		return "", errors.New("invalid data in config file")
 	}
 
 	connectionString := fmt.Sprintf("postgres://%s@%s:%d/%s?sslmode=%s", config.Credentials, config.DbURL, config.Port, config.DbName, config.SSL)

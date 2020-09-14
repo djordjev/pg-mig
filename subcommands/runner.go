@@ -55,7 +55,7 @@ func (runner *Runner) Run() error {
 		Flags:      runner.Flags,
 	}
 
-	subcommand, err := runner.getSubcomand(&base)
+	subcommand, err := runner.getSubcommand(&base)
 	if err != nil {
 		return err
 	}
@@ -63,7 +63,7 @@ func (runner *Runner) Run() error {
 	return subcommand.Run()
 }
 
-func (runner *Runner) getSubcomand(base *CommandBase) (Command, error) {
+func (runner *Runner) getSubcommand(base *CommandBase) (Command, error) {
 	switch runner.Subcommand {
 	case cmdInit:
 		{
