@@ -1,62 +1,94 @@
 package utils
 
 import (
+	"os"
 	"strings"
 	"testing"
 
 	"github.com/spf13/afero"
-	"github.com/stretchr/testify/suite"
 )
 
-type UtilsSuite struct {
-	suite.Suite
+var testUtils struct {
 	configContent string
 	Filesystem    afero.Fs
 }
 
-func (suite *UtilsSuite) SetupSuite() {
-	suite.configContent = `{"db_name":"main_db","path":".","db_url":"localhost","credentials":"postgres:pg_pass","port":5432,"ssl_mode":"disable"}`
+func TestMain(m *testing.M) {
+	testUtils.configContent = `{"db_name":"main_db","path":".","db_url":"localhost","credentials":"postgres:pg_pass","port":5432,"ssl_mode":"disable"}`
+	testUtils.Filesystem = afero.NewMemMapFs()
+
+	exitVal := m.Run()
+
+	os.Exit(exitVal)
 }
 
-func (suite *UtilsSuite) SetupTest() {
-	suite.Filesystem = afero.NewMemMapFs()
-}
-
-func (suite *UtilsSuite) TestLoadNoFile() {
-	config := Config{Filesystem: suite.Filesystem}
+func TestLoadNoFile(t *testing.T) {
+	config := Config{Filesystem: testUtils.Filesystem}
 	err := config.Load()
 
-	suite.Require().NotNil(err)
+	if err == nil {
+		t.Logf("TestLoadNoFile fails because error was nil")
+		t.Fail()
+	}
 }
 
-func (suite *UtilsSuite) TestLoadWithFile() {
-	config := Config{Filesystem: suite.Filesystem}
+func TestLoadWithFile(t *testing.T) {
+	config := Config{Filesystem: testUtils.Filesystem}
 
-	afero.WriteFile(suite.Filesystem, configFileName, []byte(suite.configContent), 0644)
-
-	err := config.Load()
-
-	suite.Require().Nil(err)
-
-	suite.Require().Equal(config.DbName, "main_db")
-	suite.Require().Equal(config.Path, ".")
-	suite.Require().Equal(config.DbURL, "localhost")
-	suite.Require().Equal(config.Credentials, "postgres:pg_pass")
-	suite.Require().Equal(config.Port, 5432)
-	suite.Require().Equal(config.SSL, "disable")
-}
-
-func (suite *UtilsSuite) TestLoadInvalidFormat() {
-	config := Config{Filesystem: suite.Filesystem}
-
-	afero.WriteFile(suite.Filesystem, configFileName, []byte("not a json"), 0644)
+	afero.WriteFile(testUtils.Filesystem, configFileName, []byte(testUtils.configContent), 0644)
 
 	err := config.Load()
 
-	suite.Require().NotNil(err)
+	if err != nil {
+		t.Logf("Expected err to be nil but got %v", err)
+		t.Fail()
+	}
+
+	if config.DbName != "main_db" {
+		t.Logf("Expected DbName to be 'main_db' but got %s", config.DbName)
+		t.Fail()
+	}
+
+	if config.Path != "." {
+		t.Logf("Expected Path to be '.' but got %s", config.Path)
+		t.Fail()
+	}
+
+	if config.DbURL != "localhost" {
+		t.Logf("Expected DbURL to be localhost but got %s", config.DbURL)
+		t.Fail()
+	}
+
+	if config.Credentials != "postgres:pg_pass" {
+		t.Logf("Expected credentials to be postgres:pg_pass but got %s", config.Credentials)
+		t.Fail()
+	}
+
+	if config.Port != 5432 {
+		t.Logf("Expected port to be 5432 but got %d", config.Port)
+		t.Fail()
+	}
+
+	if config.SSL != "disable" {
+		t.Logf("Expected ssl to be disable but got %s", config.SSL)
+		t.Fail()
+	}
 }
 
-func (suite *UtilsSuite) TestStoreSavesConfig() {
+func TestLoadInvalidFormat(t *testing.T) {
+	config := Config{Filesystem: testUtils.Filesystem}
+
+	afero.WriteFile(testUtils.Filesystem, configFileName, []byte("not a json"), 0644)
+
+	err := config.Load()
+
+	if err == nil {
+		t.Log("Expected to return error when format is invalid")
+		t.Fail()
+	}
+}
+
+func TestStoreSavesConfig(t *testing.T) {
 	config := Config{
 		Credentials: "Credentials",
 		DbName:      "DbName",
@@ -65,24 +97,28 @@ func (suite *UtilsSuite) TestStoreSavesConfig() {
 		Port:        1234,
 		SSL:         "SSL",
 
-		Filesystem: suite.Filesystem,
+		Filesystem: testUtils.Filesystem,
 	}
 
-	afero.WriteFile(suite.Filesystem, configFileName, []byte("wrong content"), 0777)
+	afero.WriteFile(testUtils.Filesystem, configFileName, []byte("wrong content"), 0777)
 
 	err := config.Store()
 
-	suite.Require().Nil(err)
-
-	bytesContent, err := afero.ReadFile(suite.Filesystem, configFileName)
 	if err != nil {
-		suite.Fail("Can't read written config file")
+		t.Logf("Expected to get nil for error but got %v", err)
+		t.Fail()
+	}
+
+	bytesContent, err := afero.ReadFile(testUtils.Filesystem, configFileName)
+	if err != nil {
+		t.Log("Can't read written config file")
+		t.Fail()
 		return
 	}
 
 	strContent := string(bytesContent)
 
-	hasCredientials := strings.Index(strContent, "Credentials")
+	hasCredentials := strings.Index(strContent, "Credentials")
 	hasDBName := strings.Index(strContent, "DbName")
 	hasURL := strings.Index(strContent, "DbURL")
 	hasPath := strings.Index(strContent, "Path")
@@ -90,16 +126,43 @@ func (suite *UtilsSuite) TestStoreSavesConfig() {
 	hasSSL := strings.Index(strContent, "SSL")
 	hasOldContent := strings.Index(strContent, "wrong content")
 
-	suite.Require().False(hasOldContent >= 0)
-	suite.Require().True(hasSSL >= 0)
-	suite.Require().True(hasPort >= 0)
-	suite.Require().True(hasPath >= 0)
-	suite.Require().True(hasURL >= 0)
-	suite.Require().True(hasDBName >= 0)
-	suite.Require().True(hasCredientials >= 0)
+	if hasOldContent >= 0 {
+		t.Log("Found old content after rewriting config")
+		t.Fail()
+	}
+
+	if hasSSL < 0 {
+		t.Log("Not fount SSL")
+		t.Fail()
+	}
+
+	if hasPort < 0 {
+		t.Log("Not found port")
+		t.Fail()
+	}
+
+	if hasPath < 0 {
+		t.Log("Not found path")
+		t.Fail()
+	}
+
+	if hasURL < 0 {
+		t.Log("Not found URL")
+		t.Fail()
+	}
+
+	if hasDBName < 0 {
+		t.Log("Not found DB Name")
+		t.Fail()
+	}
+
+	if hasCredentials < 0 {
+		t.Log("Not found credentials")
+		t.Fail()
+	}
 }
 
-func (suite *UtilsSuite) TestGetConnectionString() {
+func TestGetConnectionString(t *testing.T) {
 	config := Config{
 		Credentials: "Credentials",
 		DbName:      "DbName",
@@ -108,21 +171,31 @@ func (suite *UtilsSuite) TestGetConnectionString() {
 		Port:        1234,
 		SSL:         "SSL",
 
-		Filesystem: suite.Filesystem,
+		Filesystem: testUtils.Filesystem,
 	}
 
 	connectionString, err := config.GetConnectionString()
 
-	suite.Require().Nil(err)
-	suite.Require().Equal(connectionString, "postgres://Credentials@DbURL:1234/DbName?sslmode=SSL")
+	if err != nil {
+		t.Logf("Expected err to be nil but got %v", err)
+		t.Fail()
+	}
+
+	if connectionString != "postgres://Credentials@DbURL:1234/DbName?sslmode=SSL" {
+		t.Logf("Got invalid connection string %s", connectionString)
+		t.Fail()
+	}
 
 	config.Credentials = ""
 	connectionString, err = config.GetConnectionString()
 
-	suite.Require().Empty(connectionString)
-	suite.Require().NotNil(err)
-}
+	if connectionString != "" {
+		t.Logf("Expected to get empty string but got %s", connectionString)
+		t.Fail()
+	}
 
-func TestUtilsSuite(t *testing.T) {
-	suite.Run(t, new(UtilsSuite))
+	if err == nil {
+		t.Log("Expected to get error but err is nil")
+		t.Fail()
+	}
 }

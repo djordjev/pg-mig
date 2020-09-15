@@ -1,44 +1,58 @@
-package models_test
+package models
 
 import (
+	"context"
 	"errors"
-	"github.com/djordjev/pg-mig/testutils"
+	"github.com/jackc/pgconn"
+	"github.com/jackc/pgx/v4"
+	"os"
 	"testing"
-
-	"github.com/djordjev/pg-mig/models"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/suite"
 )
 
-type ModelsSuite struct {
-	suite.Suite
-	mockDB testutils.MockDBConnection
+var testModels struct {
+	mockDBSuccess DBConnection
+	mockDBError DBConnection
 }
 
-func (suite *ModelsSuite) SetupTest() {
-	suite.mockDB = testutils.NewMockedDBConnection()
+type MockedDBConnectionSuccess struct {
+	pgx.Conn
 }
 
-func (suite *ModelsSuite) TestCreateMetaTable() {
-	r := suite.Require()
+func (conn MockedDBConnectionSuccess) Exec(_ context.Context, _ string, _ ...interface{}) (pgconn.CommandTag, error) {
+	return nil, nil
+}
 
-	suite.mockDB.On("Exec", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
+type MockedDBConnectionError struct {
+	pgx.Conn
+}
 
-	m := models.Models{Db: &suite.mockDB}
+func (conn MockedDBConnectionError) Exec(_ context.Context, _ string, _ ...interface{}) (pgconn.CommandTag, error) {
+	return nil, errors.New("some error")
+}
+
+func TestMain(m *testing.M) {
+	testModels.mockDBSuccess = MockedDBConnectionSuccess{}
+	testModels.mockDBError = MockedDBConnectionError{}
+
+	exitVal := m.Run()
+
+	os.Exit(exitVal)
+}
+
+func TestCreateMetaTable(t *testing.T) {
+	m := Models{Db: testModels.mockDBSuccess}
 	err := m.CreateMetaTable()
-	r.Nil(err)
+	if err != nil {
+		t.Logf("Expected error to be nil but got %v", err)
+		t.Fail()
+	}
 }
 
-func (suite *ModelsSuite) TestCreateMetaTableFail() {
-	r := suite.Require()
-
-	suite.mockDB.On("Exec", mock.Anything, mock.Anything, mock.Anything).Return(nil, errors.New("err"))
-
-	m := models.Models{Db: &suite.mockDB}
+func TestCreateMetaTableFail(t *testing.T) {
+	m := Models{Db: testModels.mockDBError}
 	err := m.CreateMetaTable()
-	r.NotNil(err)
-}
-
-func TestModelsSuite(t *testing.T) {
-	suite.Run(t, new(ModelsSuite))
+	if err == nil {
+		t.Log("Expected to get error but got nil")
+		t.Fail()
+	}
 }
