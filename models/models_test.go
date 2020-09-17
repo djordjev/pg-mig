@@ -9,30 +9,25 @@ import (
 	"testing"
 )
 
+// Mocks
+type MockedDBConnection struct {
+	pgx.Conn
+	err error
+}
+
+func (conn MockedDBConnection) Exec(_ context.Context, _ string, _ ...interface{}) (pgconn.CommandTag, error) {
+	return nil, conn.err
+}
+
+// Structs
 var testModels struct {
 	mockDBSuccess DBConnection
-	mockDBError DBConnection
-}
-
-type MockedDBConnectionSuccess struct {
-	pgx.Conn
-}
-
-func (conn MockedDBConnectionSuccess) Exec(_ context.Context, _ string, _ ...interface{}) (pgconn.CommandTag, error) {
-	return nil, nil
-}
-
-type MockedDBConnectionError struct {
-	pgx.Conn
-}
-
-func (conn MockedDBConnectionError) Exec(_ context.Context, _ string, _ ...interface{}) (pgconn.CommandTag, error) {
-	return nil, errors.New("some error")
+	mockDBError   DBConnection
 }
 
 func TestMain(m *testing.M) {
-	testModels.mockDBSuccess = MockedDBConnectionSuccess{}
-	testModels.mockDBError = MockedDBConnectionError{}
+	testModels.mockDBSuccess = MockedDBConnection{err: nil}
+	testModels.mockDBError = MockedDBConnection{err: errors.New("some err")}
 
 	exitVal := m.Run()
 

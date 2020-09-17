@@ -1,57 +1,61 @@
-package subcommands_test
+package subcommands
 
 import (
+	"context"
 	"errors"
-	"github.com/djordjev/pg-mig/testutils"
+	"github.com/jackc/pgconn"
+	"github.com/jackc/pgx/v4"
 	"testing"
 
 	"github.com/djordjev/pg-mig/models"
-	"github.com/djordjev/pg-mig/subcommands"
 	"github.com/djordjev/pg-mig/utils"
 	"github.com/spf13/afero"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/suite"
 )
 
-type InitializeSuite struct {
-	suite.Suite
-	base   subcommands.CommandBase
-	mockDB testutils.MockDBConnection
+// Mocks
+type MockedDBConnection struct {
+	pgx.Conn
+	err     error
+	counter int8
 }
 
-func (suite *InitializeSuite) SetupTest() {
-	suite.mockDB = testutils.NewMockedDBConnection()
+func (conn MockedDBConnection) Exec(_ context.Context, _ string, _ ...interface{}) (pgconn.CommandTag, error) {
+	conn.counter++
+	return nil, conn.err
+}
 
-	suite.base = subcommands.CommandBase{
-		Models:     models.Models{Db: &suite.mockDB},
+func buildCommandBase(connection *MockedDBConnection) *CommandBase {
+	cb := CommandBase{
+		Models:     models.Models{Db: connection},
 		Filesystem: afero.NewMemMapFs(),
 		Config:     utils.Config{},
 		Flags:      []string{},
 	}
+
+	return &cb
 }
 
-func (suite *InitializeSuite) TestCreateTableSuccess() {
-	suite.mockDB.On("Exec", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
-
-	initialize := subcommands.Initialize{CommandBase: suite.base}
+func TestCreateTableSuccess(t *testing.T) {
+	commandBase := buildCommandBase(&MockedDBConnection{err: nil})
+	initialize := Initialize{CommandBase: *commandBase}
 	err := initialize.Run()
 
-	suite.Require().Nil(err)
+	if err != nil {
+		t.Logf("Expected error to be nil but got: %v", err)
+		t.Fail()
+	}
 
-	suite.mockDB.MethodCalled("Exec")
 }
 
-func (suite *InitializeSuite) TestCreateTableError() {
-	suite.mockDB.On("Exec", mock.Anything, mock.Anything, mock.Anything).Return(nil, errors.New("db error"))
+func TestCreateTableError(t *testing.T) {
+	commandBase := buildCommandBase(&MockedDBConnection{err: errors.New("some error")})
 
-	initialize := subcommands.Initialize{CommandBase: suite.base}
+	initialize := Initialize{CommandBase: *commandBase}
+
 	err := initialize.Run()
 
-	suite.Require().NotNil(err)
-
-	suite.mockDB.MethodCalled("Exec")
-}
-
-func TestInitializeSuite(t *testing.T) {
-	suite.Run(t, new(InitializeSuite))
+	if err == nil {
+		t.Log("Expected to return error but got nil")
+		t.Fail()
+	}
 }
