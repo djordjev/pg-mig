@@ -2,14 +2,12 @@ package main
 
 import (
 	"fmt"
+	"github.com/djordjev/pg-mig/utils"
 	"os"
 
 	"github.com/djordjev/pg-mig/subcommands"
 	"github.com/spf13/afero"
 )
-
-const cmdInit = "init"
-const cmdHelp = "help"
 
 func main() {
 
@@ -22,6 +20,7 @@ func main() {
 		Subcommand: os.Args[1],
 		Flags:      os.Args[2:],
 		Filesystem: afero.NewOsFs(),
+		Connector:  utils.BuildConnector,
 	}
 
 	err := runner.Run()

@@ -1,6 +1,7 @@
 package subcommands
 
 import (
+	"context"
 	"github.com/djordjev/pg-mig/models"
 	"github.com/djordjev/pg-mig/utils"
 	"github.com/spf13/afero"
@@ -18,3 +19,6 @@ type CommandBase struct {
 	Flags      []string
 	Filesystem afero.Fs
 }
+
+// DBConnector interface for opening DB connection
+type DBConnector func(ctx context.Context, connString string) (models.DBConnection, error)

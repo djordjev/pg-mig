@@ -9,7 +9,6 @@ import (
 
 	"github.com/djordjev/pg-mig/models"
 	"github.com/djordjev/pg-mig/utils"
-	"github.com/jackc/pgx/v4"
 	"github.com/spf13/afero"
 )
 
@@ -20,6 +19,7 @@ type Runner struct {
 	Subcommand string
 	Flags      []string
 	Filesystem afero.Fs
+	Connector  DBConnector
 }
 
 // Run runs command selected from args
@@ -42,7 +42,7 @@ func (runner *Runner) Run() error {
 		return err
 	}
 
-	conn, err := pgx.Connect(context.Background(), connectionString)
+	conn, err := runner.Connector(context.Background(), connectionString)
 	if err != nil {
 		return err
 	}

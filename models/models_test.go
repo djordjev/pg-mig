@@ -19,6 +19,10 @@ func (conn MockedDBConnection) Exec(_ context.Context, _ string, _ ...interface{
 	return nil, conn.err
 }
 
+func (conn MockedDBConnection) Close(_ context.Context) error {
+	return nil
+}
+
 // Structs
 var testModels struct {
 	mockDBSuccess DBConnection

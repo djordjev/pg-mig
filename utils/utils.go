@@ -1,10 +1,12 @@
 package utils
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-
+	"github.com/djordjev/pg-mig/models"
+	"github.com/jackc/pgx/v4"
 	"github.com/spf13/afero"
 )
 
@@ -79,4 +81,13 @@ func (config *Config) GetConnectionString() (string, error) {
 	connectionString := fmt.Sprintf("postgres://%s@%s:%d/%s?sslmode=%s", config.Credentials, config.DbURL, config.Port, config.DbName, config.SSL)
 
 	return connectionString, nil
+}
+
+func BuildConnector(ctx context.Context, str string) (models.DBConnection, error) {
+	conn, err := pgx.Connect(ctx, str)
+	if err != nil {
+		return nil, err
+	}
+
+	return conn, err
 }
