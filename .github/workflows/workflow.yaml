@@ -31,4 +31,11 @@ jobs:
         uses: actions/checkout@master
 
       - name: Build executable
-        run: go build ./cmd/pg-mig/main.go
+        run: go build -o ./build/pg-mig ./cmd/pg-mig/main.go
+
+      - name: Upload executable
+        uses: actions/upload-artifact@v2.1.4
+        with:
+          name: pg-mig
+          path: ./build/pg-mig
+          if-no-files-found: error
