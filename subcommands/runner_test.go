@@ -180,7 +180,7 @@ func TestRun(t *testing.T) {
 		t.Fail()
 	}
 
-	if hasCredentials {
+	if !hasCredentials {
 		t.Log("Missing credentials in configuration")
 		t.Fail()
 	}
