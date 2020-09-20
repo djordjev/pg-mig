@@ -160,7 +160,7 @@ func TestRun(t *testing.T) {
 	fsystem := filesystem.Filesystem{Fs: fs}
 
 	runner := Runner{
-		Fs: fsystem,
+		Fs:         fsystem,
 		Subcommand: cmdInit,
 		Flags:      []string{"-name=main_db", "-credentials=postgres:pg_pass"},
 		Connector:  connector,

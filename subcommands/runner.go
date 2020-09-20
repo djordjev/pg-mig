@@ -12,6 +12,7 @@ import (
 )
 
 const cmdInit = "init"
+const cmdAdd = "add"
 
 // Runner structure used for instantiating selected subcommand
 type Runner struct {
@@ -52,9 +53,10 @@ func (runner *Runner) Run() error {
 	}()
 
 	base := CommandBase{
-		Config: config,
-		Models: models.Models{Db: conn},
-		Flags:  runner.Flags,
+		Config:     config,
+		Models:     models.Models{Db: conn},
+		Flags:      runner.Flags,
+		Filesystem: runner.Fs,
 	}
 
 	subcommand, err := runner.getSubcommand(&base)
@@ -70,11 +72,13 @@ func (runner *Runner) getSubcommand(base *CommandBase) (Command, error) {
 	case cmdInit:
 		{
 
-			initialize := Initialize{
-				CommandBase: *base,
-			}
-
+			initialize := Initialize{CommandBase: *base}
 			return &initialize, nil
+		}
+	case cmdAdd:
+		{
+			add := Add{CommandBase: *base}
+			return &add, nil
 		}
 	}
 

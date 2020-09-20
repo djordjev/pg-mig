@@ -6,6 +6,7 @@ import (
 	"github.com/djordjev/pg-mig/models"
 	"github.com/spf13/afero"
 	"os"
+	"time"
 
 	"github.com/djordjev/pg-mig/subcommands"
 )
@@ -20,7 +21,7 @@ func main() {
 	runner := subcommands.Runner{
 		Subcommand: os.Args[1],
 		Flags:      os.Args[2:],
-		Fs:         filesystem.Filesystem{Fs: afero.NewOsFs()},
+		Fs:         filesystem.Filesystem{Fs: afero.NewOsFs(), GetNow: time.Now},
 		Connector:  models.BuildConnector,
 	}
 

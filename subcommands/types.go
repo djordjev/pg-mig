@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/djordjev/pg-mig/filesystem"
 	"github.com/djordjev/pg-mig/models"
-	"github.com/spf13/afero"
 )
 
 // Command interface encapsulating different commands
@@ -17,7 +16,7 @@ type CommandBase struct {
 	Models     models.Models
 	Config     filesystem.Config
 	Flags      []string
-	Filesystem afero.Fs
+	Filesystem filesystem.Filesystem
 }
 
 // DBConnector interface for opening DB connection
