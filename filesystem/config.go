@@ -15,15 +15,14 @@ type Config struct {
 	Credentials string `json:"credentials"`
 	Port        int    `json:"port"`
 	SSL         string `json:"ssl_mode"`
-
-	Filesystem afero.Fs `json:"-"`
 }
 
 const configFileName = "pgmig.config.json"
 
-// Store - saves configuration in json file
-func (config *Config) Store() error {
-	afs := &afero.Afero{Fs: config.Filesystem}
+// StoreConfig - saves configuration in json file
+func (fs *Filesystem) StoreConfig(config Config) error {
+	afs := &afero.Afero{Fs: fs.Fs}
+
 	exists, err := afs.Exists(configFileName)
 
 	if err != nil {
@@ -51,21 +50,23 @@ func (config *Config) Store() error {
 	return nil
 }
 
-// Load - reads previously stored config file from current dir
-func (config *Config) Load() error {
-	afs := &afero.Afero{Fs: config.Filesystem}
+// LoadConfig - reads previously stored config file from current dir
+func (fs *Filesystem) LoadConfig() (Config, error) {
+	afs := &afero.Afero{Fs: fs.Fs}
+	config := Config{}
+
 	data, err := afs.ReadFile(configFileName)
 
 	if err != nil {
-		return err
+		return config, err
 	}
 
-	err = json.Unmarshal(data, config)
+	err = json.Unmarshal(data, &config)
 	if err != nil {
-		return err
+		return config, err
 	}
 
-	return nil
+	return config, nil
 }
 
 // GetConnectionString returns string for connecting on DB

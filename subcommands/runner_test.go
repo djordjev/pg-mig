@@ -3,6 +3,7 @@ package subcommands
 import (
 	"context"
 	"fmt"
+	"github.com/djordjev/pg-mig/filesystem"
 	"github.com/djordjev/pg-mig/models"
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
@@ -109,7 +110,7 @@ func TestCreateInitFile(t *testing.T) {
 
 	for i := 0; i < len(table); i++ {
 		test := table[i]
-		runner := Runner{Flags: test.flags, Filesystem: test.fs}
+		runner := Runner{Flags: test.flags, Fs: filesystem.Filesystem{Fs: test.fs}}
 
 		err := runner.createInitFile()
 
@@ -155,8 +156,11 @@ func TestRun(t *testing.T) {
 		return &connection{}, nil
 	}
 
+	fs := afero.NewMemMapFs()
+	fsystem := filesystem.Filesystem{Fs: fs}
+
 	runner := Runner{
-		Filesystem: afero.NewMemMapFs(),
+		Fs: fsystem,
 		Subcommand: cmdInit,
 		Flags:      []string{"-name=main_db", "-credentials=postgres:pg_pass"},
 		Connector:  connector,
@@ -169,7 +173,7 @@ func TestRun(t *testing.T) {
 		t.Fail()
 	}
 
-	bytesContent, err := afero.ReadFile(runner.Filesystem, "pgmig.config.json")
+	bytesContent, err := afero.ReadFile(fs, "pgmig.config.json")
 	content := string(bytesContent)
 
 	hasDBName := strings.Index(content, "\"db_name\":\"main_db\"") > 0

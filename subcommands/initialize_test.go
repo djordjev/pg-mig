@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/djordjev/pg-mig/models"
-	"github.com/spf13/afero"
 )
 
 // Mocks
@@ -26,10 +25,9 @@ func (conn MockedDBConnection) Exec(_ context.Context, _ string, _ ...interface{
 
 func buildCommandBase(connection *MockedDBConnection) *CommandBase {
 	cb := CommandBase{
-		Models:     models.Models{Db: connection},
-		Filesystem: afero.NewMemMapFs(),
-		Config:     filesystem.Config{},
-		Flags:      []string{},
+		Models: models.Models{Db: connection},
+		Config: filesystem.Config{},
+		Flags:  []string{},
 	}
 
 	return &cb

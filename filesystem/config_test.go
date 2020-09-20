@@ -10,8 +10,8 @@ import (
 var validContent = `{"db_name":"main_db","path":".","db_url":"localhost","credentials":"postgres:pg_pass","port":5432,"ssl_mode":"disable"}`
 
 func TestLoadNoFile(t *testing.T) {
-	config := Config{Filesystem: afero.NewMemMapFs()}
-	err := config.Load()
+	fs := Filesystem{Fs: afero.NewMemMapFs()}
+	_, err := fs.LoadConfig()
 
 	if err == nil {
 		t.Logf("TestLoadNoFile fails because error was nil")
@@ -21,8 +21,7 @@ func TestLoadNoFile(t *testing.T) {
 
 func TestLoadWithFile(t *testing.T) {
 	fs := afero.NewMemMapFs()
-
-	config := Config{Filesystem: fs}
+	fsystem := Filesystem{Fs: fs}
 
 	err := afero.WriteFile(fs, configFileName, []byte(validContent), 0644)
 	if err != nil {
@@ -31,7 +30,7 @@ func TestLoadWithFile(t *testing.T) {
 		return
 	}
 
-	err = config.Load()
+	config, err := fsystem.LoadConfig()
 
 	if err != nil {
 		t.Logf("Expected err to be nil but got %v", err)
@@ -71,8 +70,7 @@ func TestLoadWithFile(t *testing.T) {
 
 func TestLoadInvalidFormat(t *testing.T) {
 	fs := afero.NewMemMapFs()
-
-	config := Config{Filesystem: fs}
+	fsystem := Filesystem{Fs: fs}
 
 	err := afero.WriteFile(fs, configFileName, []byte("not a json"), 0644)
 	if err != nil {
@@ -81,7 +79,7 @@ func TestLoadInvalidFormat(t *testing.T) {
 		return
 	}
 
-	err = config.Load()
+	_, err = fsystem.LoadConfig()
 
 	if err == nil {
 		t.Log("Expected to return error when format is invalid")
@@ -91,6 +89,7 @@ func TestLoadInvalidFormat(t *testing.T) {
 
 func TestStoreSavesConfig(t *testing.T) {
 	fs := afero.NewMemMapFs()
+	fsystem := Filesystem{Fs: fs}
 
 	config := Config{
 		Credentials: "Credentials",
@@ -99,8 +98,6 @@ func TestStoreSavesConfig(t *testing.T) {
 		Path:        "Path",
 		Port:        1234,
 		SSL:         "SSL",
-
-		Filesystem: fs,
 	}
 
 	err := afero.WriteFile(fs, configFileName, []byte("wrong content"), 0777)
@@ -110,7 +107,7 @@ func TestStoreSavesConfig(t *testing.T) {
 		return
 	}
 
-	err = config.Store()
+	err = fsystem.StoreConfig(config)
 
 	if err != nil {
 		t.Logf("Expected to get nil for error but got %v", err)
@@ -171,8 +168,6 @@ func TestStoreSavesConfig(t *testing.T) {
 }
 
 func TestGetConnectionString(t *testing.T) {
-	fs := afero.NewMemMapFs()
-
 	config := Config{
 		Credentials: "Credentials",
 		DbName:      "DbName",
@@ -180,8 +175,6 @@ func TestGetConnectionString(t *testing.T) {
 		Path:        "Path",
 		Port:        1234,
 		SSL:         "SSL",
-
-		Filesystem: fs,
 	}
 
 	connectionString, err := config.GetConnectionString()

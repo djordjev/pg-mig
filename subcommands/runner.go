@@ -9,7 +9,6 @@ import (
 	"os"
 
 	"github.com/djordjev/pg-mig/models"
-	"github.com/spf13/afero"
 )
 
 const cmdInit = "init"
@@ -18,7 +17,7 @@ const cmdInit = "init"
 type Runner struct {
 	Subcommand string
 	Flags      []string
-	Filesystem afero.Fs
+	Fs         filesystem.Filesystem
 	Connector  DBConnector
 }
 
@@ -31,8 +30,7 @@ func (runner *Runner) Run() error {
 		}
 	}
 
-	config := filesystem.Config{Filesystem: runner.Filesystem}
-	err := config.Load()
+	config, err := runner.Fs.LoadConfig()
 	if err != nil {
 		return err
 	}
@@ -54,10 +52,9 @@ func (runner *Runner) Run() error {
 	}()
 
 	base := CommandBase{
-		Filesystem: runner.Filesystem,
-		Config:     config,
-		Models:     models.Models{Db: conn},
-		Flags:      runner.Flags,
+		Config: config,
+		Models: models.Models{Db: conn},
+		Flags:  runner.Flags,
 	}
 
 	subcommand, err := runner.getSubcommand(&base)
@@ -119,11 +116,9 @@ func (runner *Runner) createInitFile() error {
 		Path:        *path,
 		SSL:         *useSSL,
 		Port:        *port,
-
-		Filesystem: runner.Filesystem,
 	}
 
-	err = config.Store()
+	err = runner.Fs.StoreConfig(config)
 	if err != nil {
 		return err
 	}

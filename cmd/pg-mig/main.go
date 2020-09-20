@@ -2,11 +2,12 @@ package main
 
 import (
 	"fmt"
+	"github.com/djordjev/pg-mig/filesystem"
 	"github.com/djordjev/pg-mig/models"
+	"github.com/spf13/afero"
 	"os"
 
 	"github.com/djordjev/pg-mig/subcommands"
-	"github.com/spf13/afero"
 )
 
 func main() {
@@ -19,7 +20,7 @@ func main() {
 	runner := subcommands.Runner{
 		Subcommand: os.Args[1],
 		Flags:      os.Args[2:],
-		Filesystem: afero.NewOsFs(),
+		Fs:         filesystem.Filesystem{Fs: afero.NewOsFs()},
 		Connector:  models.BuildConnector,
 	}
 
