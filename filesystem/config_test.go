@@ -1,29 +1,16 @@
-package utils
+package filesystem
 
 import (
-	"os"
 	"strings"
 	"testing"
 
 	"github.com/spf13/afero"
 )
 
-var testUtils struct {
-	configContent string
-	Filesystem    afero.Fs
-}
-
-func TestMain(m *testing.M) {
-	testUtils.configContent = `{"db_name":"main_db","path":".","db_url":"localhost","credentials":"postgres:pg_pass","port":5432,"ssl_mode":"disable"}`
-	testUtils.Filesystem = afero.NewMemMapFs()
-
-	exitVal := m.Run()
-
-	os.Exit(exitVal)
-}
+var validContent = `{"db_name":"main_db","path":".","db_url":"localhost","credentials":"postgres:pg_pass","port":5432,"ssl_mode":"disable"}`
 
 func TestLoadNoFile(t *testing.T) {
-	config := Config{Filesystem: testUtils.Filesystem}
+	config := Config{Filesystem: afero.NewMemMapFs()}
 	err := config.Load()
 
 	if err == nil {
@@ -33,11 +20,18 @@ func TestLoadNoFile(t *testing.T) {
 }
 
 func TestLoadWithFile(t *testing.T) {
-	config := Config{Filesystem: testUtils.Filesystem}
+	fs := afero.NewMemMapFs()
 
-	afero.WriteFile(testUtils.Filesystem, configFileName, []byte(testUtils.configContent), 0644)
+	config := Config{Filesystem: fs}
 
-	err := config.Load()
+	err := afero.WriteFile(fs, configFileName, []byte(validContent), 0644)
+	if err != nil {
+		t.Log("Can't write test file in TestLoadWithFile")
+		t.Fail()
+		return
+	}
+
+	err = config.Load()
 
 	if err != nil {
 		t.Logf("Expected err to be nil but got %v", err)
@@ -76,11 +70,18 @@ func TestLoadWithFile(t *testing.T) {
 }
 
 func TestLoadInvalidFormat(t *testing.T) {
-	config := Config{Filesystem: testUtils.Filesystem}
+	fs := afero.NewMemMapFs()
 
-	afero.WriteFile(testUtils.Filesystem, configFileName, []byte("not a json"), 0644)
+	config := Config{Filesystem: fs}
 
-	err := config.Load()
+	err := afero.WriteFile(fs, configFileName, []byte("not a json"), 0644)
+	if err != nil {
+		t.Log("Can't write test file in TestLoadInvalidFormat")
+		t.Fail()
+		return
+	}
+
+	err = config.Load()
 
 	if err == nil {
 		t.Log("Expected to return error when format is invalid")
@@ -89,6 +90,8 @@ func TestLoadInvalidFormat(t *testing.T) {
 }
 
 func TestStoreSavesConfig(t *testing.T) {
+	fs := afero.NewMemMapFs()
+
 	config := Config{
 		Credentials: "Credentials",
 		DbName:      "DbName",
@@ -97,19 +100,24 @@ func TestStoreSavesConfig(t *testing.T) {
 		Port:        1234,
 		SSL:         "SSL",
 
-		Filesystem: testUtils.Filesystem,
+		Filesystem: fs,
 	}
 
-	afero.WriteFile(testUtils.Filesystem, configFileName, []byte("wrong content"), 0777)
+	err := afero.WriteFile(fs, configFileName, []byte("wrong content"), 0777)
+	if err != nil {
+		t.Log("Can't write test file in TestStoreSavesConfig")
+		t.Fail()
+		return
+	}
 
-	err := config.Store()
+	err = config.Store()
 
 	if err != nil {
 		t.Logf("Expected to get nil for error but got %v", err)
 		t.Fail()
 	}
 
-	bytesContent, err := afero.ReadFile(testUtils.Filesystem, configFileName)
+	bytesContent, err := afero.ReadFile(fs, configFileName)
 	if err != nil {
 		t.Log("Can't read written config file")
 		t.Fail()
@@ -163,6 +171,8 @@ func TestStoreSavesConfig(t *testing.T) {
 }
 
 func TestGetConnectionString(t *testing.T) {
+	fs := afero.NewMemMapFs()
+
 	config := Config{
 		Credentials: "Credentials",
 		DbName:      "DbName",
@@ -171,7 +181,7 @@ func TestGetConnectionString(t *testing.T) {
 		Port:        1234,
 		SSL:         "SSL",
 
-		Filesystem: testUtils.Filesystem,
+		Filesystem: fs,
 	}
 
 	connectionString, err := config.GetConnectionString()

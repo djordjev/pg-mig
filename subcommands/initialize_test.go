@@ -3,12 +3,12 @@ package subcommands
 import (
 	"context"
 	"errors"
+	"github.com/djordjev/pg-mig/filesystem"
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
 	"testing"
 
 	"github.com/djordjev/pg-mig/models"
-	"github.com/djordjev/pg-mig/utils"
 	"github.com/spf13/afero"
 )
 
@@ -28,7 +28,7 @@ func buildCommandBase(connection *MockedDBConnection) *CommandBase {
 	cb := CommandBase{
 		Models:     models.Models{Db: connection},
 		Filesystem: afero.NewMemMapFs(),
-		Config:     utils.Config{},
+		Config:     filesystem.Config{},
 		Flags:      []string{},
 	}
 

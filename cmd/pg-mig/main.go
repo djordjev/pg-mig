@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/djordjev/pg-mig/utils"
+	"github.com/djordjev/pg-mig/models"
 	"os"
 
 	"github.com/djordjev/pg-mig/subcommands"
@@ -20,7 +20,7 @@ func main() {
 		Subcommand: os.Args[1],
 		Flags:      os.Args[2:],
 		Filesystem: afero.NewOsFs(),
-		Connector:  utils.BuildConnector,
+		Connector:  models.BuildConnector,
 	}
 
 	err := runner.Run()

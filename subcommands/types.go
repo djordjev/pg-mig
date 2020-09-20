@@ -2,8 +2,8 @@ package subcommands
 
 import (
 	"context"
+	"github.com/djordjev/pg-mig/filesystem"
 	"github.com/djordjev/pg-mig/models"
-	"github.com/djordjev/pg-mig/utils"
 	"github.com/spf13/afero"
 )
 
@@ -15,7 +15,7 @@ type Command interface {
 // CommandBase base struct for command
 type CommandBase struct {
 	Models     models.Models
-	Config     utils.Config
+	Config     filesystem.Config
 	Flags      []string
 	Filesystem afero.Fs
 }
