@@ -14,7 +14,7 @@ import (
 func main() {
 
 	if len(os.Args) < 2 {
-		fmt.Println("Missing command. Please run pg-mig help to see more infoo")
+		fmt.Println("Missing command. Please run pg-mig help to see more info")
 		return
 	}
 
