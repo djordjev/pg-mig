@@ -21,6 +21,8 @@ func TestGetSubcommand(t *testing.T) {
 		hasType  reflect.Type
 	}{
 		{runner: Runner{Subcommand: cmdInit}, hasError: false, hasType: reflect.TypeOf(&Initialize{})},
+		{runner: Runner{Subcommand: cmdAdd}, hasError: false, hasType: reflect.TypeOf(&Add{})},
+		{runner: Runner{Subcommand: cmdRun}, hasError: false, hasType: reflect.TypeOf(&Run{})},
 		{runner: Runner{Subcommand: "unknown"}, hasError: true, hasType: reflect.TypeOf(nil)},
 	}
 
