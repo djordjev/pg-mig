@@ -1,41 +1,13 @@
 package models
 
 import (
-	"context"
 	"errors"
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgx/v4"
-	"os"
 	"testing"
+	"time"
 )
 
-// Mocks
-type MockedDBConnection struct {
-	pgx.Conn
-	err error
-}
-
-func (conn MockedDBConnection) Exec(_ context.Context, _ string, _ ...interface{}) (pgconn.CommandTag, error) {
-	return nil, conn.err
-}
-
-// Structs
-var testModels struct {
-	mockDBSuccess DBConnection
-	mockDBError   DBConnection
-}
-
-func TestMain(m *testing.M) {
-	testModels.mockDBSuccess = &MockedDBConnection{err: nil}
-	testModels.mockDBError = &MockedDBConnection{err: errors.New("some err")}
-
-	exitVal := m.Run()
-
-	os.Exit(exitVal)
-}
-
 func TestCreateMetaTable(t *testing.T) {
-	m := Models{Db: testModels.mockDBSuccess}
+	m := Models{Db: &mockedDBConnection{execError: nil}}
 	err := m.CreateMetaTable()
 	if err != nil {
 		t.Logf("Expected error to be nil but got %v", err)
@@ -44,10 +16,34 @@ func TestCreateMetaTable(t *testing.T) {
 }
 
 func TestCreateMetaTableFail(t *testing.T) {
-	m := Models{Db: testModels.mockDBError}
+	m := Models{Db: &mockedDBConnection{execError: errors.New("some err")}}
 	err := m.CreateMetaTable()
 	if err == nil {
 		t.Log("Expected to get error but got nil")
+		t.Fail()
+	}
+}
+
+func TestGetMigrationsList(t *testing.T) {
+	var queryRes [][]interface{}
+	queryRes = make([][]interface{}, 2, 2)
+
+	t1, _ := time.Parse(time.RFC3339, "2020-09-20T15:04:05Z")
+	t2, _ := time.Parse(time.RFC3339, "2020-09-20T15:05:05Z")
+
+	queryRes[0] = []interface{}{t1}
+	queryRes[1] = []interface{}{t2}
+
+	db := &mockedDBConnection{queryRes: queryRes}
+	m := Models{Db: db}
+
+	res, err := m.GetMigrationsList()
+	if err != nil {
+		t.Logf("GetMigrationsList returned error %v", err)
+		t.Fail()
+	}
+
+	if res[0] != t1.Unix() || res[1] != t2.Unix() {
 		t.Fail()
 	}
 }

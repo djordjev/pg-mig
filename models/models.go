@@ -3,6 +3,7 @@ package models
 import (
 	"context"
 	"fmt"
+	"time"
 )
 
 const tableName = "__pg_mig_meta"
@@ -30,4 +31,34 @@ func (models *Models) CreateMetaTable() error {
 	}
 
 	return nil
+}
+
+// GetMigrationsList - fetches timestamps of migrations that has
+// been executed in current DB
+func (models *Models) GetMigrationsList() ([]int64, error) {
+
+	query := `
+		select ts from __pg_mig_meta order by ts asc
+	`
+
+	rows, err := models.Db.Query(context.Background(), query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	result := make([]int64, 0, 10)
+
+	for rows.Next() {
+		var ts time.Time
+
+		err = rows.Scan(&ts)
+		if err != nil {
+			return result, nil
+		}
+
+		result = append(result, ts.Unix())
+	}
+
+	return result, nil
 }

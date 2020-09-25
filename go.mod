@@ -4,6 +4,7 @@ go 1.15
 
 require (
 	github.com/jackc/pgconn v1.6.4
+	github.com/jackc/pgproto3/v2 v2.0.2
 	github.com/jackc/pgx/v4 v4.8.1
 	github.com/spf13/afero v1.3.4
 	golang.org/x/crypto v0.0.0-20200709230013-948cd5f35899 // indirect

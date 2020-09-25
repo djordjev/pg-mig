@@ -59,3 +59,33 @@ func TestCreateFileNoLocation(t *testing.T) {
 		t.Fail()
 	}
 }
+
+//func TestLoadFiles(t *testing.T) {
+//	fs := afero.NewMemMapFs()
+//
+//	time1, _ := time.Parse(time.RFC3339, "2020-09-20T15:04:05Z")
+//	time2, _ := time.Parse(time.RFC3339, "2020-09-20T16:04:05Z")
+//	time3, _ := time.Parse(time.RFC3339, "2020-09-20T17:04:05Z")
+//	time4, _ := time.Parse(time.RFC3339, "2020-09-20T18:04:05Z")
+//
+//	afero.WriteFile(fs, fmt.Sprintf("mig_%d_something_up.sql", time1.Unix()), []byte("first"), os.ModePerm)
+//	afero.WriteFile(fs, fmt.Sprintf("mig_%d_up.sql", time2.Unix()), []byte("second"), os.ModePerm)
+//	afero.WriteFile(fs, fmt.Sprintf("mig_%d_zzzz_up.sql", time3.Unix()), []byte("third"), os.ModePerm)
+//	afero.WriteFile(fs, fmt.Sprintf("mig_%d_up.sql", time1.Unix()), []byte("fourth"), os.ModePerm)
+//	afero.WriteFile(fs, "invalid_file_format", []byte("invalid"), os.ModePerm)
+//
+//	rexp := regexp.MustCompile("^mig_([0-9]+).*_up.sql$")
+//
+//	table := []struct {
+//		from     time.Time
+//		to       time.Time
+//		contents []string
+//		ids      []int64
+//	}{
+//		{
+//			from:    time1.Sub(),
+//			to:      time4,
+//			pattern: regexp.MustCompile("^mig_([0-9]+).*_up.sql$"),
+//		},
+//	}
+//}
