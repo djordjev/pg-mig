@@ -2,24 +2,28 @@ package models
 
 import (
 	"context"
+	"errors"
 	"github.com/jackc/pgconn"
 	pgproto32 "github.com/jackc/pgproto3/v2"
 	"github.com/jackc/pgx/v4"
 	"reflect"
 )
 
+var scanError = errors.New("scan error")
+
 type mockedDBConnection struct {
 	pgx.Conn
 	execError  error
 	queryError error
 	queryRes   [][]interface{}
+	scanErr    error
 }
 
 func (conn mockedDBConnection) Exec(_ context.Context, _ string, _ ...interface{}) (pgconn.CommandTag, error) {
 	return nil, conn.execError
 }
 
-func (conn mockedDBConnection) Query(_ context.Context, query string, _ ...interface{}) (pgx.Rows, error) {
+func (conn mockedDBConnection) Query(_ context.Context, _ string, _ ...interface{}) (pgx.Rows, error) {
 	if conn.queryError != nil {
 		return nil, conn.queryError
 	}
@@ -42,6 +46,10 @@ func (r *rowsImpl) Next() bool {
 func (r *rowsImpl) Scan(dest ...interface{}) error {
 	pos := r.cnt - 1
 	current := r.conn.queryRes[pos]
+
+	if r.conn.scanErr != nil {
+		return r.conn.scanErr
+	}
 
 	for i := 0; i < len(dest); i++ {
 		c := current[i]

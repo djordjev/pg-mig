@@ -54,7 +54,7 @@ func (models *Models) GetMigrationsList() ([]int64, error) {
 
 		err = rows.Scan(&ts)
 		if err != nil {
-			return result, nil
+			return result, err
 		}
 
 		result = append(result, ts.Unix())
