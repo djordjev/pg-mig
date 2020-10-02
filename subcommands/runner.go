@@ -6,9 +6,8 @@ import (
 	"flag"
 	"fmt"
 	"github.com/djordjev/pg-mig/filesystem"
-	"os"
-
 	"github.com/djordjev/pg-mig/models"
+	"os"
 )
 
 const cmdInit = "init"
@@ -21,6 +20,7 @@ type Runner struct {
 	Flags      []string
 	Fs         filesystem.Filesystem
 	Connector  DBConnector
+	GetNow     TimeGetter
 }
 
 // Run runs command selected from args
@@ -84,7 +84,7 @@ func (runner *Runner) getSubcommand(base *CommandBase) (Command, error) {
 
 	case cmdRun:
 		{
-			run := Run{CommandBase: *base}
+			run := Run{CommandBase: *base, GetNow: runner.GetNow}
 			return &run, nil
 		}
 	}

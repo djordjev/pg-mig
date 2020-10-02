@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/djordjev/pg-mig/filesystem"
 	"github.com/djordjev/pg-mig/models"
+	"time"
 )
 
 // Command interface encapsulating different commands
@@ -21,3 +22,6 @@ type CommandBase struct {
 
 // DBConnector interface for opening DB connection
 type DBConnector func(ctx context.Context, connString string) (models.DBConnection, error)
+
+// TimeGetter
+type TimeGetter func() time.Time

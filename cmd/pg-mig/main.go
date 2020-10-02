@@ -23,6 +23,7 @@ func main() {
 		Flags:      os.Args[2:],
 		Fs:         filesystem.Filesystem{Fs: afero.NewOsFs(), GetNow: time.Now},
 		Connector:  models.BuildConnector,
+		GetNow:     time.Now,
 	}
 
 	err := runner.Run()
