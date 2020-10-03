@@ -20,7 +20,7 @@ type Config struct {
 const configFileName = "pgmig.config.json"
 
 // StoreConfig - saves configuration in json file
-func (fs *Filesystem) StoreConfig(config Config) error {
+func (fs *ImplFilesystem) StoreConfig(config Config) error {
 	afs := &afero.Afero{Fs: fs.Fs}
 
 	exists, err := afs.Exists(configFileName)
@@ -51,7 +51,7 @@ func (fs *Filesystem) StoreConfig(config Config) error {
 }
 
 // LoadConfig - reads previously stored config file from current dir
-func (fs *Filesystem) LoadConfig() (Config, error) {
+func (fs *ImplFilesystem) LoadConfig() (Config, error) {
 	afs := &afero.Afero{Fs: fs.Fs}
 	config := Config{}
 

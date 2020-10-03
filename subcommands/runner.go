@@ -55,7 +55,7 @@ func (runner *Runner) Run() error {
 
 	base := CommandBase{
 		Config:     config,
-		Models:     models.Models{Db: conn},
+		Models:     &models.ImplModels{Db: conn},
 		Flags:      runner.Flags,
 		Filesystem: runner.Fs,
 	}
@@ -78,7 +78,7 @@ func (runner *Runner) getSubcommand(base *CommandBase) (Command, error) {
 		}
 	case cmdAdd:
 		{
-			add := Add{CommandBase: *base}
+			add := Add{CommandBase: *base, GetNow: runner.GetNow}
 			return &add, nil
 		}
 

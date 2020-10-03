@@ -13,3 +13,10 @@ type DBConnection interface {
 	Exec(ctx context.Context, sql string, arguments ...interface{}) (pgconn.CommandTag, error)
 	Query(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error)
 }
+
+// Models interface for interaction with database
+type Models interface {
+	CreateMetaTable() error
+	GetMigrationsList() ([]int64, error)
+	Execute(string) error
+}

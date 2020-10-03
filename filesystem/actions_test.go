@@ -9,7 +9,7 @@ import (
 
 func TestCreateFileWithLocation(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	fsystem := Filesystem{Fs: fs}
+	fsystem := &ImplFilesystem{Fs: fs}
 
 	err := fsystem.CreateMigrationFile("test_name.sql", "./test/")
 	if err != nil {
@@ -42,7 +42,7 @@ func TestCreateFileWithLocation(t *testing.T) {
 
 func TestCreateFileNoLocation(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	fsystem := Filesystem{Fs: fs}
+	fsystem := &ImplFilesystem{Fs: fs}
 
 	err := fsystem.CreateMigrationFile("no_loc_name.sql", "")
 	if err != nil {
@@ -159,7 +159,7 @@ func TestGetFileTimestamps(t *testing.T) {
 
 	for _, val := range table {
 		t.Run(val.name, func(t *testing.T) {
-			fsystem := Filesystem{Fs: fs}
+			fsystem := &ImplFilesystem{Fs: fs}
 			t1, _ := time.Parse(time.RFC3339, val.from)
 			t2, _ := time.Parse(time.RFC3339, val.to)
 
@@ -185,7 +185,7 @@ func TestGetFileTimestamps(t *testing.T) {
 
 func TestReadMigrationContent(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	fsystem := Filesystem{Fs: fs}
+	fsystem := &ImplFilesystem{Fs: fs}
 
 	file := MigrationFile{Up: "mig_123_up.sql", Down: "mig_123_down.sql", Timestamp: 123}
 	config := Config{}

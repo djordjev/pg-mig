@@ -26,7 +26,7 @@ func TestCreateMetaTable(t *testing.T) {
 
 	for _, val := range table {
 		t.Run(val.name, func(t *testing.T) {
-			m := Models{Db: &mockedDBConnection{execError: val.execError}}
+			m := ImplModels{Db: &mockedDBConnection{execError: val.execError}}
 			err := m.CreateMetaTable()
 			if err != val.execError {
 				t.Fail()
@@ -86,7 +86,7 @@ func TestGetMigrationsList(t *testing.T) {
 				queryError: val.queryError,
 				scanErr:    val.scanError,
 			}
-			m := Models{Db: db}
+			m := ImplModels{Db: db}
 
 			res, err := m.GetMigrationsList()
 

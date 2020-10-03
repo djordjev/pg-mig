@@ -8,14 +8,14 @@ import (
 
 const tableName = "__pg_mig_meta"
 
-// Models interface as a collection for interactions with storage
-type Models struct {
+// ImplModels implementation of models interface with underlying database
+type ImplModels struct {
 	Db DBConnection
 }
 
 // CreateMetaTable creates table named __pg_mig_meta
 // that will be used for storing migration info
-func (models *Models) CreateMetaTable() error {
+func (models *ImplModels) CreateMetaTable() error {
 	db := models.Db
 
 	createTable := `
@@ -35,7 +35,7 @@ func (models *Models) CreateMetaTable() error {
 
 // GetMigrationsList - fetches timestamps of migrations that has
 // been executed in current DB
-func (models *Models) GetMigrationsList() ([]int64, error) {
+func (models *ImplModels) GetMigrationsList() ([]int64, error) {
 
 	query := `
 		select ts from __pg_mig_meta order by ts asc
@@ -61,4 +61,9 @@ func (models *Models) GetMigrationsList() ([]int64, error) {
 	}
 
 	return result, nil
+}
+
+func (models *ImplModels) Execute(sql string) error {
+	fmt.Println("executing", sql)
+	return nil
 }

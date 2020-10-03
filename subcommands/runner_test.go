@@ -112,7 +112,7 @@ func TestCreateInitFile(t *testing.T) {
 
 	for i := 0; i < len(table); i++ {
 		test := table[i]
-		runner := Runner{Flags: test.flags, Fs: filesystem.Filesystem{Fs: test.fs}}
+		runner := Runner{Flags: test.flags, Fs: &filesystem.ImplFilesystem{Fs: test.fs}}
 
 		err := runner.createInitFile()
 
@@ -159,7 +159,7 @@ func TestRun(t *testing.T) {
 	}
 
 	fs := afero.NewMemMapFs()
-	fsystem := filesystem.Filesystem{Fs: fs}
+	fsystem := &filesystem.ImplFilesystem{Fs: fs}
 
 	runner := Runner{
 		Fs:         fsystem,

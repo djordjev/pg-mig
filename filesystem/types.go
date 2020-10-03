@@ -5,9 +5,9 @@ import (
 	"time"
 )
 
-type Filesystem struct {
+type ImplFilesystem struct {
 	Fs     afero.Fs
-	GetNow TimeGetter
+	GetNow func() time.Time
 }
 
 type TimeGetter func() time.Time
@@ -26,4 +26,12 @@ func (d Direction) String() string {
 	}
 
 	return "UnknownDirection"
+}
+
+type Filesystem interface {
+	StoreConfig(config Config) error
+	LoadConfig() (Config, error)
+	CreateMigrationFile(string, string) error
+	ReadMigrationContent(MigrationFile, Direction, Config) (string, error)
+	GetFileTimestamps(time.Time, time.Time) (MigrationFileList, error)
 }

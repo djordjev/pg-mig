@@ -25,7 +25,7 @@ func (conn MockedDBConnection) Exec(_ context.Context, _ string, _ ...interface{
 
 func buildCommandBase(connection *MockedDBConnection) *CommandBase {
 	cb := CommandBase{
-		Models: models.Models{Db: connection},
+		Models: &models.ImplModels{Db: connection},
 		Config: filesystem.Config{},
 		Flags:  []string{},
 	}

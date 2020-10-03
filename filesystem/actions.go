@@ -10,10 +10,8 @@ import (
 	"time"
 )
 
-var InvalidFileFormat = errors.New("invalid file format")
-
 // CreateMigrationFile - creates a new file in path directory
-func (fs *Filesystem) CreateMigrationFile(name string, location string) error {
+func (fs *ImplFilesystem) CreateMigrationFile(name string, location string) error {
 	filename := filepath.Join(location, name)
 
 	_, err := fs.Fs.Create(filename)
@@ -25,7 +23,7 @@ func (fs *Filesystem) CreateMigrationFile(name string, location string) error {
 }
 
 // ReadMigrationContent for specified migration file reads content as a string
-func (fs *Filesystem) ReadMigrationContent(file MigrationFile, direction Direction, config Config) (string, error) {
+func (fs *ImplFilesystem) ReadMigrationContent(file MigrationFile, direction Direction, config Config) (string, error) {
 	path := file.GetFileName(config, direction)
 
 	content, err := afero.ReadFile(fs.Fs, path)
@@ -39,7 +37,7 @@ func (fs *Filesystem) ReadMigrationContent(file MigrationFile, direction Directi
 // GetFileTimestamps - gets the list of migrations that are between two arguments.
 // Returned list does not include file that has exactly same timestamp as `from` arg.
 // Returned list includes file that has exactly same timestamp as `to` arg.
-func (fs *Filesystem) GetFileTimestamps(from time.Time, to time.Time) (MigrationFileList, error) {
+func (fs *ImplFilesystem) GetFileTimestamps(from time.Time, to time.Time) (MigrationFileList, error) {
 	config, err := fs.LoadConfig()
 	if err != nil {
 		return nil, err
@@ -90,7 +88,7 @@ func (fs *Filesystem) GetFileTimestamps(from time.Time, to time.Time) (Migration
 	return result, nil
 }
 
-func (fs *Filesystem) storeMigrationFileInMap(resultMap map[int64]MigrationFile, submatches []string, isUp bool) error {
+func (fs *ImplFilesystem) storeMigrationFileInMap(resultMap map[int64]MigrationFile, submatches []string, isUp bool) error {
 	if len(submatches) < 2 {
 		return errors.New("given filename does not match regex")
 	}

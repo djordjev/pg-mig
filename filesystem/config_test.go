@@ -10,7 +10,7 @@ import (
 var validContent = `{"db_name":"main_db","path":".","db_url":"localhost","credentials":"postgres:pg_pass","port":5432,"ssl_mode":"disable"}`
 
 func TestLoadNoFile(t *testing.T) {
-	fs := Filesystem{Fs: afero.NewMemMapFs()}
+	fs := &ImplFilesystem{Fs: afero.NewMemMapFs()}
 	_, err := fs.LoadConfig()
 
 	if err == nil {
@@ -21,7 +21,7 @@ func TestLoadNoFile(t *testing.T) {
 
 func TestLoadWithFile(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	fsystem := Filesystem{Fs: fs}
+	fsystem := &ImplFilesystem{Fs: fs}
 
 	err := afero.WriteFile(fs, configFileName, []byte(validContent), 0644)
 	if err != nil {
@@ -70,7 +70,7 @@ func TestLoadWithFile(t *testing.T) {
 
 func TestLoadInvalidFormat(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	fsystem := Filesystem{Fs: fs}
+	fsystem := &ImplFilesystem{Fs: fs}
 
 	err := afero.WriteFile(fs, configFileName, []byte("not a json"), 0644)
 	if err != nil {
@@ -89,7 +89,7 @@ func TestLoadInvalidFormat(t *testing.T) {
 
 func TestStoreSavesConfig(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	fsystem := Filesystem{Fs: fs}
+	fsystem := &ImplFilesystem{Fs: fs}
 
 	config := Config{
 		Credentials: "Credentials",

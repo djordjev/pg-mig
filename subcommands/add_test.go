@@ -20,7 +20,7 @@ func TestAddRun(t *testing.T) {
 
 	table := []struct {
 		fs         afero.Fs
-		timeGetter filesystem.TimeGetter
+		timeGetter func() time.Time
 		flags      []string
 		name       string
 	}{
@@ -47,10 +47,11 @@ func TestAddRun(t *testing.T) {
 	for i := 0; i < len(table); i++ {
 		current := table[i]
 		add := Add{
-			CommandBase{
-				Filesystem: filesystem.Filesystem{Fs: fs, GetNow: current.timeGetter},
+			CommandBase: CommandBase{
+				Filesystem: &filesystem.ImplFilesystem{Fs: fs},
 				Flags:      current.flags,
 			},
+			GetNow: current.timeGetter,
 		}
 
 		add.Run()

@@ -21,7 +21,7 @@ func main() {
 	runner := subcommands.Runner{
 		Subcommand: os.Args[1],
 		Flags:      os.Args[2:],
-		Fs:         filesystem.Filesystem{Fs: afero.NewOsFs(), GetNow: time.Now},
+		Fs:         &filesystem.ImplFilesystem{Fs: afero.NewOsFs(), GetNow: time.Now},
 		Connector:  models.BuildConnector,
 		GetNow:     time.Now,
 	}

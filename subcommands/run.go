@@ -2,8 +2,8 @@ package subcommands
 
 import (
 	"flag"
-	"fmt"
 	"github.com/djordjev/pg-mig/filesystem"
+	"sort"
 	"time"
 )
 
@@ -40,7 +40,9 @@ func (run *Run) Run() error {
 		return err
 	}
 
-	err = run.executeDownMigrations(down, inDB, inputTime)
+	downMigrations := run.getInDBDownMigrations(inDB, inputTime)
+
+	err = run.executeDownMigrations(down, downMigrations)
 	if err != nil {
 		return err
 	}
@@ -62,8 +64,23 @@ func (run *Run) getMigrationFiles(border time.Time) (stay, goDown filesystem.Mig
 	return
 }
 
+func (run *Run) getInDBDownMigrations(inDB []int64, border time.Time) []int64 {
+	result := make([]int64, 0, 10)
+
+	for _, mig := range inDB {
+		if mig > border.Unix() {
+			result = append(result, mig)
+		}
+	}
+
+	// Sort in reverse order
+	sort.Slice(result, func(i, j int) bool { return result[i] > result[j] })
+
+	return result
+}
+
 func (run *Run) parseTime(inputTime *string) (time.Time, error) {
-	if inputTime == nil {
+	if inputTime == nil || *inputTime == "" {
 		return run.GetNow(), nil
 	}
 
@@ -92,7 +109,7 @@ func (run *Run) executeUpMigrations(stay filesystem.MigrationFileList, inDB []in
 			return err
 		}
 
-		err = run.Execute(migrationContent)
+		err = run.Models.Execute(migrationContent)
 		if err != nil {
 			return err
 		}
@@ -100,36 +117,31 @@ func (run *Run) executeUpMigrations(stay filesystem.MigrationFileList, inDB []in
 	return nil
 }
 
-func (run *Run) executeDownMigrations(down filesystem.MigrationFileList, inDB []int64, border time.Time) error {
+func (run *Run) executeDownMigrations(down filesystem.MigrationFileList, downIDs []int64) error {
+	if downIDs == nil {
+		return nil
+	}
+
 	toExecuteMap := make(map[int64]filesystem.MigrationFile)
+	config := run.Config
 
 	for _, mig := range down {
 		toExecuteMap[mig.Timestamp] = mig
 	}
 
-	for i := len(inDB) - 1; i >= 0; i-- {
-		current := inDB[i]
+	for _, toExec := range downIDs {
+		current := toExecuteMap[toExec]
 
-		if current < border.Unix() {
-			// TODO check here should it be < or <=
-			return nil
-		}
-
-		migrationContent, err := run.Filesystem.ReadMigrationContent(toExecuteMap[current], filesystem.DirectionDown, run.Config)
+		content, err := run.Filesystem.ReadMigrationContent(current, filesystem.DirectionDown, config)
 		if err != nil {
 			return err
 		}
 
-		err = run.Execute(migrationContent)
+		err = run.Models.Execute(content)
 		if err != nil {
 			return err
 		}
 	}
 
-	return nil
-}
-
-func (run *Run) Execute(content string) error {
-	fmt.Println("Executing: ", content)
 	return nil
 }
