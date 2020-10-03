@@ -3,6 +3,7 @@ package subcommands
 import (
 	"flag"
 	"github.com/djordjev/pg-mig/filesystem"
+	"github.com/djordjev/pg-mig/models"
 	"sort"
 	"time"
 )
@@ -104,12 +105,19 @@ func (run *Run) executeUpMigrations(stay filesystem.MigrationFileList, inDB []in
 			continue
 		}
 
-		migrationContent, err := run.Filesystem.ReadMigrationContent(mig, filesystem.DirectionUp, run.Config)
+		content, err := run.Filesystem.ReadMigrationContent(mig, filesystem.DirectionUp, run.Config)
 		if err != nil {
 			return err
 		}
 
-		err = run.Models.Execute(migrationContent)
+		execContext := models.ExecutionContext{
+			Sql:       content,
+			IsUp:      true,
+			Timestamp: mig.Timestamp,
+			Name:      mig.Up,
+		}
+
+		err = run.Models.Execute(execContext)
 		if err != nil {
 			return err
 		}
@@ -137,7 +145,14 @@ func (run *Run) executeDownMigrations(down filesystem.MigrationFileList, downIDs
 			return err
 		}
 
-		err = run.Models.Execute(content)
+		execContext := models.ExecutionContext{
+			Sql:       content,
+			IsUp:      false,
+			Timestamp: current.Timestamp,
+			Name:      current.Down,
+		}
+
+		err = run.Models.Execute(execContext)
 		if err != nil {
 			return err
 		}

@@ -3,6 +3,7 @@ package models
 import (
 	"context"
 	"fmt"
+	"github.com/jackc/pgx/v4"
 	"time"
 )
 
@@ -21,7 +22,7 @@ func (models *ImplModels) CreateMetaTable() error {
 	createTable := `
 		create table if not exists %s (
 			id serial primary key,
-			ts timestamp not null
+			ts timestamptz not null
 		)
 	`
 
@@ -63,7 +64,51 @@ func (models *ImplModels) GetMigrationsList() ([]int64, error) {
 	return result, nil
 }
 
-func (models *ImplModels) Execute(sql string) error {
-	fmt.Println("executing", sql)
+func updateMetaTable(executionContext *ExecutionContext, tx pgx.Tx) error {
+	unixTs := time.Unix(executionContext.Timestamp, 0)
+
+	upQuery := fmt.Sprintf("insert into %s (ts) values ($1);", tableName)
+	downQuery := fmt.Sprintf("delete from %s where ts = $1", tableName)
+
+	var err error
+	if executionContext.IsUp {
+		_, err = tx.Exec(context.Background(), upQuery, unixTs)
+	} else {
+		_, err = tx.Exec(context.Background(), downQuery, unixTs)
+	}
+
+	return err
+}
+
+func (models *ImplModels) Execute(executionContext ExecutionContext) error {
+	tx, err := models.Db.Begin(context.Background())
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(fmt.Sprintf("Executing migration %s", executionContext.Name))
+
+	err = updateMetaTable(&executionContext, tx)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		err := tx.Rollback(context.Background())
+		if err != nil && err != pgx.ErrTxClosed {
+			panic(err)
+		}
+	}()
+
+	_, err = tx.Exec(context.Background(), executionContext.Sql)
+	if err != nil {
+		return err
+	}
+
+	err = tx.Commit(context.Background())
+	if err != nil {
+		panic(err)
+	}
+
 	return nil
 }

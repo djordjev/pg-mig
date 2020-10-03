@@ -9,6 +9,7 @@ import (
 
 // DBConnection wrapper interface for interactions with db
 type DBConnection interface {
+	Begin(ctx context.Context) (pgx.Tx, error)
 	Close(ctx context.Context) error
 	Exec(ctx context.Context, sql string, arguments ...interface{}) (pgconn.CommandTag, error)
 	Query(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error)
@@ -18,5 +19,12 @@ type DBConnection interface {
 type Models interface {
 	CreateMetaTable() error
 	GetMigrationsList() ([]int64, error)
-	Execute(string) error
+	Execute(ExecutionContext) error
+}
+
+type ExecutionContext struct {
+	Sql       string
+	IsUp      bool
+	Timestamp int64
+	Name      string
 }
