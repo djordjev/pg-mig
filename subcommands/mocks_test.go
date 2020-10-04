@@ -36,9 +36,6 @@ type mockedFilesystem struct {
 	createMigrationFileError  error
 	readMigrationContentRes   string
 	readMigrationContentError error
-	getFileTimestampsRes      []filesystem.MigrationFileList
-	getFileTimestampsError    error
-	getFileTimestampsResIter  int
 }
 
 func (m *mockedFilesystem) StoreConfig(_ filesystem.Config) error {
@@ -58,13 +55,7 @@ func (m *mockedFilesystem) ReadMigrationContent(file filesystem.MigrationFile, d
 	return c.String(0), c.Error(1)
 }
 
-func (m *mockedFilesystem) GetFileTimestamps(_ time.Time, _ time.Time) (filesystem.MigrationFileList, error) {
-	if m.getFileTimestampsError != nil {
-		return nil, m.getFileTimestampsError
-	}
-
-	val := m.getFileTimestampsRes[m.getFileTimestampsResIter]
-	m.getFileTimestampsResIter++
-
-	return val, m.getFileTimestampsError
+func (m *mockedFilesystem) GetFileTimestamps(t1 time.Time, t2 time.Time) (filesystem.MigrationFileList, error) {
+	args := m.Called(t1, t2)
+	return args.Get(0).(filesystem.MigrationFileList), args.Error(1)
 }

@@ -25,3 +25,8 @@ type DBConnector func(ctx context.Context, connString string) (models.DBConnecti
 
 // TimeGetter
 type TimeGetter func() time.Time
+
+const (
+	PUSH = "push"
+	POP  = "pop"
+)

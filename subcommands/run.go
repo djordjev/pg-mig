@@ -1,6 +1,7 @@
 package subcommands
 
 import (
+	"errors"
 	"flag"
 	"github.com/djordjev/pg-mig/filesystem"
 	"github.com/djordjev/pg-mig/models"
@@ -18,7 +19,7 @@ type Run struct {
 func (run *Run) Run() error {
 	flagSet := flag.NewFlagSet("run", flag.ExitOnError)
 
-	strTime := flagSet.String("time", run.GetNow().Format(time.RFC3339), "Time on which you want to upgrade/downgrade DB. Omit for current time")
+	strTime := flagSet.String("time", "", "Time on which you want to upgrade/downgrade DB. Omit for current time")
 
 	// TODO check file formats and matching down files
 	inDB, err := run.Models.GetMigrationsList()
@@ -26,7 +27,7 @@ func (run *Run) Run() error {
 		return err
 	}
 
-	inputTime, err := run.parseTime(strTime)
+	inputTime, err := run.parseTime(strTime, inDB)
 	if err != nil {
 		return err
 	}
@@ -80,14 +81,41 @@ func (run *Run) getInDBDownMigrations(inDB []int64, border time.Time) []int64 {
 	return result
 }
 
-func (run *Run) parseTime(inputTime *string) (time.Time, error) {
+func (run *Run) parseTime(inputTime *string, inDB []int64) (time.Time, error) {
 	if inputTime == nil || *inputTime == "" {
 		return run.GetNow(), nil
 	}
 
-	t, err := time.Parse(time.RFC3339, *inputTime)
+	// Check special values
+	if *inputTime == POP {
+		if len(inDB) > 0 {
+			last := inDB[len(inDB)-1]
+			lastTime := time.Unix(last-1, 0) // reduce 1 second from the last migration
+			return lastTime, nil
+		}
+		return time.Time{}, errors.New("pop on empty DB. This is no-op")
+	}
+
+	if *inputTime == PUSH {
+		var last int64
+		if len(inDB) > 0 {
+			last = inDB[len(inDB)-1]
+		}
+
+		_, down, err := run.getMigrationFiles(time.Unix(last, 0))
+		if err != nil {
+			return time.Time{}, err
+		}
+		if len(down) == 0 {
+			return time.Time{}, errors.New("push without next migration file. This is no-op")
+		}
+		return time.Unix(down[0].Timestamp, 0), nil
+	}
+
+	// Parse regular timestamp
+	t, err := parseAnyTime(*inputTime, run.GetNow)
 	if err != nil {
-		return time.Time{}, err
+		return t, err
 	}
 
 	return t, nil

@@ -31,12 +31,7 @@ func TestGetMigrationFiles(t *testing.T) {
 		filesystem.MigrationFile{Timestamp: 6, Up: "6_up", Down: "6_down"},
 	}
 
-	mockFS := &mockedFilesystem{
-		getFileTimestampsRes: []filesystem.MigrationFileList{
-			upList,
-			downList,
-		},
-	}
+	mockFS := &mockedFilesystem{}
 
 	run := Run{
 		CommandBase: CommandBase{
@@ -46,7 +41,12 @@ func TestGetMigrationFiles(t *testing.T) {
 		GetNow: getNow,
 	}
 
-	stay, down, err := run.getMigrationFiles(time.Time{})
+	now := getNow()
+	border := time.Unix(123, 0)
+	mockFS.On("GetFileTimestamps", time.Time{}, border).Return(upList, nil)
+	mockFS.On("GetFileTimestamps", border, now).Return(downList, nil)
+
+	stay, down, err := run.getMigrationFiles(border)
 	for k, v := range stay {
 		r.Equal(v, upList[k], "up migrations are not matching")
 	}
@@ -55,10 +55,13 @@ func TestGetMigrationFiles(t *testing.T) {
 		r.Equal(v, downList[k], "down migrations are not matching")
 	}
 
+	mockFS.AssertExpectations(t)
+
 	r.Nil(err, "returned error")
 
-	mockFS.getFileTimestampsError = errors.New("err")
-	_, _, err = run.getMigrationFiles(time.Time{})
+	newBorder := time.Unix(321, 0)
+	mockFS.On("GetFileTimestamps", time.Time{}, newBorder).Return(filesystem.MigrationFileList{}, errors.New("err"))
+	_, _, err = run.getMigrationFiles(newBorder)
 
 	r.NotNil(err, "should return error")
 }
@@ -71,27 +74,66 @@ func TestParseTime(t *testing.T) {
 	table := []struct {
 		val      string
 		expected time.Time
+		inDB     []int64
 		err      bool
+		mockMF   filesystem.MigrationFileList
 	}{
 		{
 			val:      "",
 			expected: getNow(),
+			inDB:     []int64{},
 		},
 		{
 			val:      "2020-09-20T13:00:00Z",
 			expected: t1,
+			inDB:     []int64{},
 		},
 		{
 			val:      "invalid date",
 			expected: time.Time{},
+			inDB:     []int64{},
 			err:      true,
+		},
+		{
+			val:      "pop",
+			expected: time.Unix(2, 0),
+			inDB: []int64{
+				time.Unix(1, 0).Unix(),
+				time.Unix(2, 0).Unix(),
+				time.Unix(3, 0).Unix(),
+			},
+		},
+		{
+			val:      "push",
+			expected: time.Unix(11, 0),
+			mockMF:   filesystem.MigrationFileList{filesystem.MigrationFile{Timestamp: 11}},
+			inDB: []int64{
+				time.Unix(1, 0).Unix(),
+				time.Unix(2, 0).Unix(),
+				time.Unix(3, 0).Unix(),
+			},
 		},
 	}
 
 	for _, v := range table {
 		t.Run(fmt.Sprintf("test time = %s", v.val), func(t *testing.T) {
-			run := Run{GetNow: getNow}
-			res, err := run.parseTime(&v.val)
+			mockedFS := mockedFilesystem{}
+			run := Run{
+				CommandBase: CommandBase{
+					Filesystem: &mockedFS,
+				},
+				GetNow: getNow,
+			}
+
+			if v.mockMF != nil {
+				last := v.inDB[len(v.inDB)-1]
+				lastTime := time.Unix(last, 0)
+				emptyMFL := filesystem.MigrationFileList{}
+				mockedFS.On("GetFileTimestamps", time.Time{}, lastTime).Return(emptyMFL, nil)
+				mockedFS.On("GetFileTimestamps", lastTime, getNow()).Return(v.mockMF, nil)
+			}
+
+			res, err := run.parseTime(&v.val, v.inDB)
 			r.Equal(res, v.expected, "return value mismatch")
 			if v.err {
 				r.NotNil(err, "error mismatch")
