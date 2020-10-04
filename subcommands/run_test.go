@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/djordjev/pg-mig/filesystem"
+	"github.com/djordjev/pg-mig/models"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -159,7 +160,13 @@ func TestExecuteUpMigrations(t *testing.T) {
 			// Setup expectations
 			for _, migration := range v.expectedToRun {
 				fs.On("ReadMigrationContent", migration, mock.Anything, run.Config).Return(migration.Up, nil)
-				m.On("Execute", migration.Up).Return(nil)
+				expectedExec := models.ExecutionContext{
+					Sql:       migration.Up,
+					IsUp:      true,
+					Timestamp: migration.Timestamp,
+					Name:      migration.Up,
+				}
+				m.On("Execute", expectedExec).Return(nil)
 			}
 
 			err := run.executeUpMigrations(v.stay, v.inDB)
@@ -228,7 +235,13 @@ func TestExecuteDownMigrations(t *testing.T) {
 
 			for _, migration := range v.expectedToRun {
 				fs.On("ReadMigrationContent", migration, mock.Anything, run.Config).Return(migration.Down, nil)
-				m.On("Execute", migration.Down).Return(nil)
+				expectedExec := models.ExecutionContext{
+					Sql:       migration.Down,
+					Timestamp: migration.Timestamp,
+					Name:      migration.Down,
+					IsUp:      false,
+				}
+				m.On("Execute", expectedExec).Return(nil)
 			}
 
 			err := run.executeDownMigrations(v.down, v.downIDs)

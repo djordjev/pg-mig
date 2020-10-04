@@ -2,6 +2,7 @@ package subcommands
 
 import (
 	"github.com/djordjev/pg-mig/filesystem"
+	"github.com/djordjev/pg-mig/models"
 	"github.com/stretchr/testify/mock"
 	"time"
 )
@@ -22,8 +23,8 @@ func (m mockedModels) GetMigrationsList() ([]int64, error) {
 	return m.getMigrationsListRes, m.getMigrationsListError
 }
 
-func (m mockedModels) Execute(sql string) error {
-	c := m.Called(sql)
+func (m mockedModels) Execute(executionContext models.ExecutionContext) error {
+	c := m.Called(executionContext)
 	return c.Error(0)
 }
 
