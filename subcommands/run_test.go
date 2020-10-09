@@ -6,16 +6,22 @@ import (
 	"github.com/djordjev/pg-mig/filesystem"
 	"github.com/djordjev/pg-mig/models"
 	"github.com/djordjev/pg-mig/timer"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"os"
 	"testing"
 	"time"
 )
 
-func getNow() time.Time {
-	now, _ := time.Parse(time.RFC3339, "2020-09-20T15:00:00Z")
-	return now
+var buildGetNow = func(mockTime string) timer.TimeGetter {
+	return func() time.Time {
+		mockTime, _ := time.Parse(time.RFC3339, mockTime)
+		return mockTime
+	}
 }
+
+var validContent = `{"db_name":"main_db","path":".","db_url":"localhost","credentials":"postgres:pg_pass","port":5432,"ssl_mode":"disable"}`
 
 func TestGetMigrationFiles(t *testing.T) {
 	r := require.New(t)
@@ -38,11 +44,11 @@ func TestGetMigrationFiles(t *testing.T) {
 		CommandBase: CommandBase{
 			Models:     mockedModels{},
 			Filesystem: mockFS,
-			Timer:      timer.Timer{Now: getNow},
+			Timer:      timer.Timer{Now: buildGetNow("2020-09-20T15:00:00Z")},
 		},
 	}
 
-	now := getNow()
+	now := buildGetNow("2020-09-20T15:00:00Z")()
 	border := time.Unix(123, 0)
 	mockFS.On("GetFileTimestamps", time.Time{}, border).Return(upList, nil)
 	mockFS.On("GetFileTimestamps", border, now).Return(downList, nil)
@@ -81,7 +87,7 @@ func TestParseTime(t *testing.T) {
 	}{
 		{
 			val:      "",
-			expected: getNow(),
+			expected: buildGetNow("2020-09-20T15:00:00Z")(),
 			inDB:     []int64{},
 		},
 		{
@@ -119,6 +125,8 @@ func TestParseTime(t *testing.T) {
 	for _, v := range table {
 		t.Run(fmt.Sprintf("test time = %s", v.val), func(t *testing.T) {
 			mockedFS := mockedFilesystem{}
+			getNow := buildGetNow("2020-09-20T15:00:00Z")
+
 			run := Run{
 				CommandBase: CommandBase{
 					Filesystem: &mockedFS,
@@ -336,6 +344,70 @@ func TestGetInDBDownMigrations(t *testing.T) {
 			res := run.getInDBDownMigrations(v.inDB, v.border)
 
 			r.Equal(res, v.result, "return values are not equal")
+		})
+	}
+}
+
+func TestRunRun(t *testing.T) {
+	t1, _ := time.Parse(time.RFC3339, "2020-10-20T10:00:00Z")
+	t2, _ := time.Parse(time.RFC3339, "2020-10-21T10:00:00Z")
+	t3, _ := time.Parse(time.RFC3339, "2020-10-22T10:00:00Z")
+
+	table := []struct {
+		name     string
+		inDB     []int64
+		flags    []string
+		expected []models.ExecutionContext
+	}{
+		{
+			name:  "execute all ups no time",
+			inDB:  []int64{},
+			flags: []string{},
+			expected: []models.ExecutionContext{
+				{Timestamp: t1.Unix(), Name: fmt.Sprintf("mig_%d_up.sql", t1.Unix()), IsUp: true, Sql: "mig_1_up_sql"},
+				{Timestamp: t2.Unix(), Name: fmt.Sprintf("mig_%d_up.sql", t2.Unix()), IsUp: true, Sql: "mig_2_up_sql"},
+				{Timestamp: t3.Unix(), Name: fmt.Sprintf("mig_%d_up.sql", t3.Unix()), IsUp: true, Sql: "mig_3_up_sql"},
+			},
+		},
+		{
+			name:  "execute all ups future time",
+			inDB:  []int64{},
+			flags: []string{"-time=2020-10-24T10:00:00Z"},
+			expected: []models.ExecutionContext{
+				{Timestamp: t1.Unix(), Name: fmt.Sprintf("mig_%d_up.sql", t1.Unix()), IsUp: true, Sql: "mig_1_up_sql"},
+				{Timestamp: t2.Unix(), Name: fmt.Sprintf("mig_%d_up.sql", t2.Unix()), IsUp: true, Sql: "mig_2_up_sql"},
+				{Timestamp: t3.Unix(), Name: fmt.Sprintf("mig_%d_up.sql", t3.Unix()), IsUp: true, Sql: "mig_3_up_sql"},
+			},
+		},
+	}
+
+	for _, v := range table {
+		t.Run(v.name, func(t *testing.T) {
+			fs := afero.NewMemMapFs()
+			afero.WriteFile(fs, fmt.Sprintf("mig_%d_up.sql", t1.Unix()), []byte("mig_1_up_sql"), os.ModePerm)
+			afero.WriteFile(fs, fmt.Sprintf("mig_%d_down.sql", t1.Unix()), []byte("mig_1_down_sql"), os.ModePerm)
+			afero.WriteFile(fs, fmt.Sprintf("mig_%d_up.sql", t2.Unix()), []byte("mig_2_up_sql"), os.ModePerm)
+			afero.WriteFile(fs, fmt.Sprintf("mig_%d_down.sql", t2.Unix()), []byte("mig_2_down_sql"), os.ModePerm)
+			afero.WriteFile(fs, fmt.Sprintf("mig_%d_up.sql", t3.Unix()), []byte("mig_3_up_sql"), os.ModePerm)
+			afero.WriteFile(fs, fmt.Sprintf("mig_%d_down.sql", t3.Unix()), []byte("mig_3_down_sql"), os.ModePerm)
+
+			afero.WriteFile(fs, "pgmig.config.json", []byte(validContent), os.ModePerm)
+
+			getNow := buildGetNow("2020-10-22T10:04:00Z")
+
+			fsystem := filesystem.ImplFilesystem{Fs: fs, GetNow: getNow}
+
+			mockedModels := mockedModels{}
+			mockedModels.On("GetMigrationsList").Return(v.inDB, nil)
+			for _, e := range v.expected {
+				mockedModels.On("Execute", e).Return(nil)
+			}
+
+			r := Run{CommandBase{Filesystem: &fsystem, Timer: timer.Timer{Now: getNow}, Models: mockedModels}}
+			r.Run()
+
+			mockedModels.AssertExpectations(t)
+
 		})
 	}
 }

@@ -20,7 +20,8 @@ func (m mockedModels) CreateMetaTable() error {
 }
 
 func (m mockedModels) GetMigrationsList() ([]int64, error) {
-	return m.getMigrationsListRes, m.getMigrationsListError
+	c := m.Called()
+	return c.Get(0).([]int64), c.Error(1)
 }
 
 func (m mockedModels) Execute(executionContext models.ExecutionContext) error {

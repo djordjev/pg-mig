@@ -153,7 +153,7 @@ func (c connection) Exec(_ context.Context, _ string, _ ...interface{}) (pgconn.
 	return nil, nil
 }
 
-func TestRun(t *testing.T) {
+func TestRunnerRun(t *testing.T) {
 	connector := func(ctx context.Context, str string) (models.DBConnection, error) {
 		return &connection{}, nil
 	}
