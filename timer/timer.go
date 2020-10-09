@@ -1,11 +1,19 @@
-package subcommands
+package timer
 
 import (
 	"errors"
 	"time"
 )
 
+// Errors
 var UnableToParseTimeErr = errors.New("unable to parse date/time format")
+
+// TimeGetter
+type TimeGetter func() time.Time
+
+type Timer struct {
+	Now TimeGetter
+}
 
 const (
 	dateNoTimezone = "2006-01-02T15:04:05"
@@ -13,7 +21,7 @@ const (
 	onlyTime       = "3:04PM"
 )
 
-func parseAnyTime(inputTime string, timeGetter TimeGetter) (time.Time, error) {
+func (timer Timer) ParseTime(inputTime string) (time.Time, error) {
 	formats := []string{
 		time.RFC3339,
 		dateNoTimezone,
@@ -25,7 +33,7 @@ func parseAnyTime(inputTime string, timeGetter TimeGetter) (time.Time, error) {
 		t, err := time.Parse(format, inputTime)
 		if err == nil {
 			if format == onlyTime {
-				now := timeGetter()
+				now := timer.Now()
 				todayTime := time.Date(
 					now.Year(),
 					now.Month(),

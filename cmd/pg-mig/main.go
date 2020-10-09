@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/djordjev/pg-mig/filesystem"
 	"github.com/djordjev/pg-mig/models"
+	"github.com/djordjev/pg-mig/timer"
 	"github.com/spf13/afero"
 	"os"
 	"time"
@@ -23,7 +24,7 @@ func main() {
 		Flags:      os.Args[2:],
 		Fs:         &filesystem.ImplFilesystem{Fs: afero.NewOsFs(), GetNow: time.Now},
 		Connector:  models.BuildConnector,
-		GetNow:     time.Now,
+		Timer:      timer.Timer{Now: time.Now},
 	}
 
 	err := runner.Run()

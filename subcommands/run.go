@@ -12,7 +12,6 @@ import (
 // Run structure for run command
 type Run struct {
 	CommandBase
-	GetNow TimeGetter
 }
 
 // Run executes up/down migrations
@@ -58,7 +57,7 @@ func (run *Run) getMigrationFiles(border time.Time) (stay, goDown filesystem.Mig
 		return nil, nil, err
 	}
 
-	goDown, err = run.Filesystem.GetFileTimestamps(border, run.GetNow())
+	goDown, err = run.Filesystem.GetFileTimestamps(border, run.Timer.Now())
 	if err != nil {
 		return nil, nil, err
 	}
@@ -83,7 +82,7 @@ func (run *Run) getInDBDownMigrations(inDB []int64, border time.Time) []int64 {
 
 func (run *Run) parseTime(inputTime *string, inDB []int64) (time.Time, error) {
 	if inputTime == nil || *inputTime == "" {
-		return run.GetNow(), nil
+		return run.Timer.Now(), nil
 	}
 
 	// Check special values
@@ -113,7 +112,7 @@ func (run *Run) parseTime(inputTime *string, inDB []int64) (time.Time, error) {
 	}
 
 	// Parse regular timestamp
-	t, err := parseAnyTime(*inputTime, run.GetNow)
+	t, err := run.Timer.ParseTime(*inputTime)
 	if err != nil {
 		return t, err
 	}

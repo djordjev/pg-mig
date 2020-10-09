@@ -8,7 +8,6 @@ import (
 // Add structure for init command
 type Add struct {
 	CommandBase
-	GetNow TimeGetter
 }
 
 // Run creates two migration files in path directory
@@ -22,7 +21,7 @@ func (add *Add) Run() error {
 		return err
 	}
 
-	now := add.GetNow()
+	now := add.Timer.Now()
 	ms := now.Unix()
 
 	var nameFormatted string

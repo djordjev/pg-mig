@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/djordjev/pg-mig/filesystem"
 	"github.com/djordjev/pg-mig/models"
+	"github.com/djordjev/pg-mig/timer"
 	"os"
 )
 
@@ -20,7 +21,7 @@ type Runner struct {
 	Flags      []string
 	Fs         filesystem.Filesystem
 	Connector  DBConnector
-	GetNow     TimeGetter
+	Timer      timer.Timer
 }
 
 // Run runs command selected from args
@@ -58,6 +59,7 @@ func (runner *Runner) Run() error {
 		Models:     &models.ImplModels{Db: conn},
 		Flags:      runner.Flags,
 		Filesystem: runner.Fs,
+		Timer:      runner.Timer,
 	}
 
 	subcommand, err := runner.getSubcommand(&base)
@@ -78,13 +80,13 @@ func (runner *Runner) getSubcommand(base *CommandBase) (Command, error) {
 		}
 	case cmdAdd:
 		{
-			add := Add{CommandBase: *base, GetNow: runner.GetNow}
+			add := Add{CommandBase: *base}
 			return &add, nil
 		}
 
 	case cmdRun:
 		{
-			run := Run{CommandBase: *base, GetNow: runner.GetNow}
+			run := Run{CommandBase: *base}
 			return &run, nil
 		}
 	}

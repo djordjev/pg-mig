@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/djordjev/pg-mig/filesystem"
 	"github.com/djordjev/pg-mig/models"
-	"time"
+	"github.com/djordjev/pg-mig/timer"
 )
 
 // Command interface encapsulating different commands
@@ -18,13 +18,11 @@ type CommandBase struct {
 	Config     filesystem.Config
 	Flags      []string
 	Filesystem filesystem.Filesystem
+	Timer      timer.Timer
 }
 
 // DBConnector interface for opening DB connection
 type DBConnector func(ctx context.Context, connString string) (models.DBConnection, error)
-
-// TimeGetter
-type TimeGetter func() time.Time
 
 const (
 	PUSH = "push"

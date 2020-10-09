@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/djordjev/pg-mig/filesystem"
 	"github.com/djordjev/pg-mig/models"
+	"github.com/djordjev/pg-mig/timer"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -37,8 +38,8 @@ func TestGetMigrationFiles(t *testing.T) {
 		CommandBase: CommandBase{
 			Models:     mockedModels{},
 			Filesystem: mockFS,
+			Timer:      timer.Timer{Now: getNow},
 		},
-		GetNow: getNow,
 	}
 
 	now := getNow()
@@ -121,8 +122,8 @@ func TestParseTime(t *testing.T) {
 			run := Run{
 				CommandBase: CommandBase{
 					Filesystem: &mockedFS,
+					Timer:      timer.Timer{Now: getNow},
 				},
-				GetNow: getNow,
 			}
 
 			if v.mockMF != nil {

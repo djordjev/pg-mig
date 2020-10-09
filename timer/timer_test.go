@@ -1,4 +1,4 @@
-package subcommands
+package timer
 
 import (
 	"github.com/stretchr/testify/require"
@@ -53,7 +53,8 @@ func TestParseAnyTime(t *testing.T) {
 	}
 
 	for _, v := range table {
-		t, err := parseAnyTime(v.time, now)
+		currentTimer := Timer{Now: now}
+		t, err := currentTimer.ParseTime(v.time)
 		r.Equal(t, v.res)
 		r.Equal(err, v.err)
 	}

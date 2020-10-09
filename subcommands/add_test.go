@@ -3,6 +3,7 @@ package subcommands
 import (
 	"fmt"
 	"github.com/djordjev/pg-mig/filesystem"
+	"github.com/djordjev/pg-mig/timer"
 	"github.com/spf13/afero"
 	"testing"
 	"time"
@@ -50,8 +51,8 @@ func TestAddRun(t *testing.T) {
 			CommandBase: CommandBase{
 				Filesystem: &filesystem.ImplFilesystem{Fs: fs},
 				Flags:      current.flags,
+				Timer:      timer.Timer{Now: current.timeGetter},
 			},
-			GetNow: current.timeGetter,
 		}
 
 		add.Run()
