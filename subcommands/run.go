@@ -20,6 +20,11 @@ func (run *Run) Run() error {
 
 	strTime := flagSet.String("time", "", "Time on which you want to upgrade/downgrade DB. Omit for current time")
 
+	err := flagSet.Parse(run.Flags)
+	if err != nil {
+		return err
+	}
+
 	// TODO check file formats and matching down files
 	inDB, err := run.Models.GetMigrationsList()
 	if err != nil {

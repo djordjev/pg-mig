@@ -348,7 +348,7 @@ func TestGetInDBDownMigrations(t *testing.T) {
 	}
 }
 
-func TestRunRun(t *testing.T) {
+func TestRun(t *testing.T) {
 	t1, _ := time.Parse(time.RFC3339, "2020-10-20T10:00:00Z")
 	t2, _ := time.Parse(time.RFC3339, "2020-10-21T10:00:00Z")
 	t3, _ := time.Parse(time.RFC3339, "2020-10-22T10:00:00Z")
@@ -379,19 +379,85 @@ func TestRunRun(t *testing.T) {
 				{Timestamp: t3.Unix(), Name: fmt.Sprintf("mig_%d_up.sql", t3.Unix()), IsUp: true, Sql: "mig_3_up_sql"},
 			},
 		},
+		{
+			name:  "execute up that was previously skipped",
+			inDB:  []int64{t2.Unix()},
+			flags: []string{"-time=2020-10-24T10:00:00Z"},
+			expected: []models.ExecutionContext{
+				{Timestamp: t1.Unix(), Name: fmt.Sprintf("mig_%d_up.sql", t1.Unix()), IsUp: true, Sql: "mig_1_up_sql"},
+				{Timestamp: t3.Unix(), Name: fmt.Sprintf("mig_%d_up.sql", t3.Unix()), IsUp: true, Sql: "mig_3_up_sql"},
+			},
+		},
+		{
+			name:     "execute up when all ups has already been executed",
+			inDB:     []int64{t1.Unix(), t2.Unix(), t3.Unix()},
+			flags:    []string{"-time=2020-10-24T10:00:00Z"},
+			expected: []models.ExecutionContext{},
+		},
+		{
+			name:  "execute second but not third migration",
+			inDB:  []int64{t1.Unix()},
+			flags: []string{"-time=2020-10-21T10:00:00Z"},
+			expected: []models.ExecutionContext{
+				{Timestamp: t2.Unix(), Name: fmt.Sprintf("mig_%d_up.sql", t2.Unix()), IsUp: true, Sql: "mig_2_up_sql"},
+			},
+		},
+		{
+			name:  "execute last down migration",
+			inDB:  []int64{t1.Unix(), t2.Unix(), t3.Unix()},
+			flags: []string{"-time=2020-10-21T10:00:00Z"},
+			expected: []models.ExecutionContext{
+				{Timestamp: t3.Unix(), Name: fmt.Sprintf("mig_%d_down.sql", t3.Unix()), IsUp: false, Sql: "mig_3_down_sql"},
+			},
+		},
+		{
+			name:  "execute last two down migration",
+			inDB:  []int64{t1.Unix(), t2.Unix(), t3.Unix()},
+			flags: []string{"-time=2020-10-20T11:00:00Z"},
+			expected: []models.ExecutionContext{
+				{Timestamp: t2.Unix(), Name: fmt.Sprintf("mig_%d_down.sql", t2.Unix()), IsUp: false, Sql: "mig_2_down_sql"},
+				{Timestamp: t3.Unix(), Name: fmt.Sprintf("mig_%d_down.sql", t3.Unix()), IsUp: false, Sql: "mig_3_down_sql"},
+			},
+		},
+		{
+			name:  "execute all down migration",
+			inDB:  []int64{t1.Unix(), t2.Unix(), t3.Unix()},
+			flags: []string{"-time=2010-10-20T11:00:00Z"},
+			expected: []models.ExecutionContext{
+				{Timestamp: t1.Unix(), Name: fmt.Sprintf("mig_%d_down.sql", t1.Unix()), IsUp: false, Sql: "mig_1_down_sql"},
+				{Timestamp: t2.Unix(), Name: fmt.Sprintf("mig_%d_down.sql", t2.Unix()), IsUp: false, Sql: "mig_2_down_sql"},
+				{Timestamp: t3.Unix(), Name: fmt.Sprintf("mig_%d_down.sql", t3.Unix()), IsUp: false, Sql: "mig_3_down_sql"},
+			},
+		},
+		{
+			name:  "execute push",
+			inDB:  []int64{t1.Unix(), t2.Unix()},
+			flags: []string{"-time=push"},
+			expected: []models.ExecutionContext{
+				{Timestamp: t3.Unix(), Name: fmt.Sprintf("mig_%d_up.sql", t3.Unix()), IsUp: true, Sql: "mig_3_up_sql"},
+			},
+		},
+		{
+			name:  "execute pop",
+			inDB:  []int64{t1.Unix(), t2.Unix()},
+			flags: []string{"-time=pop"},
+			expected: []models.ExecutionContext{
+				{Timestamp: t2.Unix(), Name: fmt.Sprintf("mig_%d_down.sql", t2.Unix()), IsUp: false, Sql: "mig_2_down_sql"},
+			},
+		},
 	}
 
 	for _, v := range table {
 		t.Run(v.name, func(t *testing.T) {
 			fs := afero.NewMemMapFs()
-			afero.WriteFile(fs, fmt.Sprintf("mig_%d_up.sql", t1.Unix()), []byte("mig_1_up_sql"), os.ModePerm)
-			afero.WriteFile(fs, fmt.Sprintf("mig_%d_down.sql", t1.Unix()), []byte("mig_1_down_sql"), os.ModePerm)
-			afero.WriteFile(fs, fmt.Sprintf("mig_%d_up.sql", t2.Unix()), []byte("mig_2_up_sql"), os.ModePerm)
-			afero.WriteFile(fs, fmt.Sprintf("mig_%d_down.sql", t2.Unix()), []byte("mig_2_down_sql"), os.ModePerm)
-			afero.WriteFile(fs, fmt.Sprintf("mig_%d_up.sql", t3.Unix()), []byte("mig_3_up_sql"), os.ModePerm)
-			afero.WriteFile(fs, fmt.Sprintf("mig_%d_down.sql", t3.Unix()), []byte("mig_3_down_sql"), os.ModePerm)
+			_ = afero.WriteFile(fs, fmt.Sprintf("mig_%d_up.sql", t1.Unix()), []byte("mig_1_up_sql"), os.ModePerm)
+			_ = afero.WriteFile(fs, fmt.Sprintf("mig_%d_down.sql", t1.Unix()), []byte("mig_1_down_sql"), os.ModePerm)
+			_ = afero.WriteFile(fs, fmt.Sprintf("mig_%d_up.sql", t2.Unix()), []byte("mig_2_up_sql"), os.ModePerm)
+			_ = afero.WriteFile(fs, fmt.Sprintf("mig_%d_down.sql", t2.Unix()), []byte("mig_2_down_sql"), os.ModePerm)
+			_ = afero.WriteFile(fs, fmt.Sprintf("mig_%d_up.sql", t3.Unix()), []byte("mig_3_up_sql"), os.ModePerm)
+			_ = afero.WriteFile(fs, fmt.Sprintf("mig_%d_down.sql", t3.Unix()), []byte("mig_3_down_sql"), os.ModePerm)
 
-			afero.WriteFile(fs, "pgmig.config.json", []byte(validContent), os.ModePerm)
+			_ = afero.WriteFile(fs, "pgmig.config.json", []byte(validContent), os.ModePerm)
 
 			getNow := buildGetNow("2020-10-22T10:04:00Z")
 
@@ -403,8 +469,15 @@ func TestRunRun(t *testing.T) {
 				mockedModels.On("Execute", e).Return(nil)
 			}
 
-			r := Run{CommandBase{Filesystem: &fsystem, Timer: timer.Timer{Now: getNow}, Models: mockedModels}}
-			r.Run()
+			r := Run{
+				CommandBase: CommandBase{
+					Filesystem: &fsystem,
+					Timer:      timer.Timer{Now: getNow},
+					Models:     &mockedModels,
+					Flags:      v.flags,
+				},
+			}
+			_ = r.Run()
 
 			mockedModels.AssertExpectations(t)
 
