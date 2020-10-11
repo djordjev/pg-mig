@@ -205,6 +205,7 @@ func TestExecuteUpMigrations(t *testing.T) {
 				CommandBase: CommandBase{
 					Filesystem: fs,
 					Models:     m,
+					Printer:    mockedPrinter{},
 				},
 			}
 
@@ -281,6 +282,7 @@ func TestExecuteDownMigrations(t *testing.T) {
 				CommandBase: CommandBase{
 					Filesystem: fs,
 					Models:     m,
+					Printer:    mockedPrinter{},
 				},
 			}
 
@@ -445,6 +447,12 @@ func TestRun(t *testing.T) {
 				{Timestamp: t2.Unix(), Name: fmt.Sprintf("mig_%d_down.sql", t2.Unix()), IsUp: false, Sql: "mig_2_down_sql"},
 			},
 		},
+		{
+			name:     "does not execute any migration if dry-run is provided",
+			inDB:     []int64{},
+			flags:    []string{"-time=2020-10-24T10:00:00Z", "-dry-run=true"},
+			expected: []models.ExecutionContext{},
+		},
 	}
 
 	for _, v := range table {
@@ -475,6 +483,7 @@ func TestRun(t *testing.T) {
 					Timer:      timer.Timer{Now: getNow},
 					Models:     &mockedModels,
 					Flags:      v.flags,
+					Printer:    mockedPrinter{},
 				},
 			}
 			_ = r.Run()

@@ -15,6 +15,7 @@ type Config struct {
 	Credentials string `json:"credentials"`
 	Port        int    `json:"port"`
 	SSL         string `json:"ssl_mode"`
+	NoColor     bool   `json:"no_color"`
 }
 
 const configFileName = "pgmig.config.json"

@@ -86,8 +86,6 @@ func (models *ImplModels) Execute(executionContext ExecutionContext) error {
 		return err
 	}
 
-	fmt.Println(fmt.Sprintf("Executing migration %s", executionContext.Name))
-
 	err = updateMetaTable(&executionContext, tx)
 	if err != nil {
 		return err

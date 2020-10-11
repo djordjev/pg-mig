@@ -19,6 +19,7 @@ type CommandBase struct {
 	Flags      []string
 	Filesystem filesystem.Filesystem
 	Timer      timer.Timer
+	Printer    Printer
 }
 
 // DBConnector interface for opening DB connection

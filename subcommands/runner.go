@@ -22,6 +22,7 @@ type Runner struct {
 	Fs         filesystem.Filesystem
 	Connector  DBConnector
 	Timer      timer.Timer
+	Printer    Printer
 }
 
 // Run runs command selected from args
@@ -37,6 +38,8 @@ func (runner *Runner) Run() error {
 	if err != nil {
 		return err
 	}
+
+	runner.Printer.SetNoColor(config.NoColor)
 
 	connectionString, err := config.GetConnectionString()
 	if err != nil {
@@ -60,6 +63,7 @@ func (runner *Runner) Run() error {
 		Flags:      runner.Flags,
 		Filesystem: runner.Fs,
 		Timer:      runner.Timer,
+		Printer:    runner.Printer,
 	}
 
 	subcommand, err := runner.getSubcommand(&base)
@@ -67,7 +71,12 @@ func (runner *Runner) Run() error {
 		return err
 	}
 
-	return subcommand.Run()
+	err = subcommand.Run()
+	if err != nil {
+		runner.Printer.PrintError(fmt.Sprintf("%v", err))
+	}
+
+	return err
 }
 
 func (runner *Runner) getSubcommand(base *CommandBase) (Command, error) {
@@ -108,6 +117,7 @@ func (runner *Runner) createInitFile() error {
 	credentials := flagSet.String("credentials", "", "Credentials for logging in on Postgres instance. In form username:password")
 	useSSL := flagSet.String("ssl", "disable", "Whether or not to use ssl. Defaults to disable.")
 	port := flagSet.Int("port", 5432, "Port on which PostgreSQL instance is running. Defaults to 5432")
+	noColor := flagSet.Bool("nocolor", false, "prevent pg-mig for printing emojis and colored text. Useful on terminals not supporting unicode.")
 
 	err = flagSet.Parse(runner.Flags)
 	if err != nil {
@@ -129,6 +139,7 @@ func (runner *Runner) createInitFile() error {
 		Path:        *path,
 		SSL:         *useSSL,
 		Port:        *port,
+		NoColor:     *noColor,
 	}
 
 	err = runner.Fs.StoreConfig(config)

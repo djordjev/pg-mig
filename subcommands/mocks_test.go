@@ -60,3 +60,17 @@ func (m *mockedFilesystem) GetFileTimestamps(t1 time.Time, t2 time.Time) (filesy
 	args := m.Called(t1, t2)
 	return args.Get(0).(filesystem.MigrationFileList), args.Error(1)
 }
+
+type mockedPrinter struct {
+	mock.Mock
+}
+
+func (m mockedPrinter) PrintUpMigration(_ string) {}
+
+func (m mockedPrinter) PrintDownMigration(_ string) {}
+
+func (m mockedPrinter) PrintError(_ string) {}
+
+func (m mockedPrinter) PrintSuccess(_ string) {}
+
+func (m mockedPrinter) SetNoColor(_ bool) {}

@@ -3,6 +3,7 @@ package subcommands
 import (
 	"errors"
 	"flag"
+	"fmt"
 	"github.com/djordjev/pg-mig/filesystem"
 	"github.com/djordjev/pg-mig/models"
 	"sort"
@@ -12,6 +13,7 @@ import (
 // Run structure for run command
 type Run struct {
 	CommandBase
+	isDryRun bool
 }
 
 // Run executes up/down migrations
@@ -19,11 +21,14 @@ func (run *Run) Run() error {
 	flagSet := flag.NewFlagSet("run", flag.ExitOnError)
 
 	strTime := flagSet.String("time", "", "Time on which you want to upgrade/downgrade DB. Omit for current time")
+	dryRun := flagSet.Bool("dry-run", false, "Run command in order to just print migrations that would be executed for given args without actually executing them.")
 
 	err := flagSet.Parse(run.Flags)
 	if err != nil {
 		return err
 	}
+
+	run.isDryRun = *dryRun
 
 	// TODO check file formats and matching down files
 	inDB, err := run.Models.GetMigrationsList()
@@ -149,10 +154,14 @@ func (run *Run) executeUpMigrations(stay filesystem.MigrationFileList, inDB []in
 			Name:      mig.Up,
 		}
 
-		err = run.Models.Execute(execContext)
-		if err != nil {
-			return err
+		run.Printer.PrintUpMigration(fmt.Sprintf("Executing up migration %s", execContext.Name))
+		if !run.isDryRun {
+			err = run.Models.Execute(execContext)
+			if err != nil {
+				return err
+			}
 		}
+
 	}
 	return nil
 }
@@ -170,7 +179,10 @@ func (run *Run) executeDownMigrations(down filesystem.MigrationFileList, downIDs
 	}
 
 	for _, toExec := range downIDs {
-		current := toExecuteMap[toExec]
+		current, exists := toExecuteMap[toExec]
+		if !exists {
+			return errors.New("down file does not exist")
+		}
 
 		content, err := run.Filesystem.ReadMigrationContent(current, filesystem.DirectionDown, config)
 		if err != nil {
@@ -184,10 +196,15 @@ func (run *Run) executeDownMigrations(down filesystem.MigrationFileList, downIDs
 			Name:      current.Down,
 		}
 
-		err = run.Models.Execute(execContext)
-		if err != nil {
-			return err
+		run.Printer.PrintDownMigration(fmt.Sprintf("Executing down migration %s", execContext.Name))
+
+		if !run.isDryRun {
+			err = run.Models.Execute(execContext)
+			if err != nil {
+				return err
+			}
 		}
+
 	}
 
 	return nil

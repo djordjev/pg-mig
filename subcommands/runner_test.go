@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
 	"github.com/spf13/afero"
+	"github.com/stretchr/testify/require"
 	"os"
 	"reflect"
 	"strings"
@@ -47,6 +48,7 @@ func TestGetSubcommand(t *testing.T) {
 }
 
 func TestCreateInitFile(t *testing.T) {
+	r := require.New(t)
 	wd, err := os.Getwd()
 	if err != nil {
 		t.Log("Unable to get current working directory. Skipping test")
@@ -67,7 +69,7 @@ func TestCreateInitFile(t *testing.T) {
 			},
 			fs:                afero.NewMemMapFs(),
 			hasError:          false,
-			configFileContent: fmt.Sprintf("{\"db_name\":\"main_db\",\"path\":\"%s\",\"db_url\":\"localhost\",\"credentials\":\"postgres:pg_pass\",\"port\":5432,\"ssl_mode\":\"disable\"}", wd),
+			configFileContent: fmt.Sprintf("{\"db_name\":\"main_db\",\"path\":\"%s\",\"db_url\":\"localhost\",\"credentials\":\"postgres:pg_pass\",\"port\":5432,\"ssl_mode\":\"disable\",\"no_color\":false}", wd),
 		},
 		{
 			flags: []string{
@@ -77,7 +79,7 @@ func TestCreateInitFile(t *testing.T) {
 			},
 			fs:                afero.NewMemMapFs(),
 			hasError:          false,
-			configFileContent: "{\"db_name\":\"main_db2\",\"path\":\"some_path\",\"db_url\":\"localhost\",\"credentials\":\"pgs\",\"port\":5432,\"ssl_mode\":\"disable\"}",
+			configFileContent: "{\"db_name\":\"main_db2\",\"path\":\"some_path\",\"db_url\":\"localhost\",\"credentials\":\"pgs\",\"port\":5432,\"ssl_mode\":\"disable\",\"no_color\":false}",
 		},
 		{
 			flags: []string{
@@ -90,7 +92,7 @@ func TestCreateInitFile(t *testing.T) {
 			},
 			fs:                afero.NewMemMapFs(),
 			hasError:          false,
-			configFileContent: "{\"db_name\":\"main_db3\",\"path\":\"some_path2\",\"db_url\":\"db\",\"credentials\":\"pgs11\",\"port\":1111,\"ssl_mode\":\"on\"}",
+			configFileContent: "{\"db_name\":\"main_db3\",\"path\":\"some_path2\",\"db_url\":\"db\",\"credentials\":\"pgs11\",\"port\":1111,\"ssl_mode\":\"on\",\"no_color\":false}",
 		},
 		{
 			flags: []string{
@@ -112,7 +114,7 @@ func TestCreateInitFile(t *testing.T) {
 
 	for i := 0; i < len(table); i++ {
 		test := table[i]
-		runner := Runner{Flags: test.flags, Fs: &filesystem.ImplFilesystem{Fs: test.fs}}
+		runner := Runner{Flags: test.flags, Fs: &filesystem.ImplFilesystem{Fs: test.fs}, Printer: mockedPrinter{}}
 
 		err := runner.createInitFile()
 
@@ -134,10 +136,7 @@ func TestCreateInitFile(t *testing.T) {
 		}
 
 		strContent := string(bytesContent)
-
-		if test.configFileContent != strContent {
-			t.Fail()
-		}
+		r.Equal(test.configFileContent, strContent, "file contents are not equal")
 	}
 }
 
@@ -166,6 +165,7 @@ func TestRunnerRun(t *testing.T) {
 		Subcommand: cmdInit,
 		Flags:      []string{"-name=main_db", "-credentials=postgres:pg_pass"},
 		Connector:  connector,
+		Printer:    mockedPrinter{},
 	}
 
 	err := runner.Run()

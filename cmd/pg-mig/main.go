@@ -19,12 +19,15 @@ func main() {
 		return
 	}
 
+	printer := subcommands.ImplPrinter{NoColor: true}
+
 	runner := subcommands.Runner{
 		Subcommand: os.Args[1],
 		Flags:      os.Args[2:],
 		Fs:         &filesystem.ImplFilesystem{Fs: afero.NewOsFs(), GetNow: time.Now},
 		Connector:  models.BuildConnector,
 		Timer:      timer.Timer{Now: time.Now},
+		Printer:    &printer,
 	}
 
 	err := runner.Run()
