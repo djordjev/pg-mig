@@ -1,7 +1,6 @@
 package subcommands
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"github.com/djordjev/pg-mig/filesystem"
@@ -25,7 +24,7 @@ func (run *Run) Run() error {
 
 	err := flagSet.Parse(run.Flags)
 	if err != nil {
-		return err
+		return fmt.Errorf("run command error: unable to parse program flags %w", err)
 	}
 
 	run.isDryRun = *dryRun
@@ -102,7 +101,7 @@ func (run *Run) parseTime(inputTime *string, inDB []int64) (time.Time, error) {
 			lastTime := time.Unix(last-1, 0) // reduce 1 second from the last migration
 			return lastTime, nil
 		}
-		return time.Time{}, errors.New("pop on empty DB. This is no-op")
+		return time.Time{}, fmt.Errorf("run command error: pop operation on empty db is no-op")
 	}
 
 	if *inputTime == PUSH {
@@ -116,7 +115,7 @@ func (run *Run) parseTime(inputTime *string, inDB []int64) (time.Time, error) {
 			return time.Time{}, err
 		}
 		if len(down) == 0 {
-			return time.Time{}, errors.New("push without next migration file. This is no-op")
+			return time.Time{}, fmt.Errorf("run command error: push operation when no more migration files is no-op")
 		}
 		return time.Unix(down[0].Timestamp, 0), nil
 	}
@@ -181,7 +180,7 @@ func (run *Run) executeDownMigrations(down filesystem.MigrationFileList, downIDs
 	for _, toExec := range downIDs {
 		current, exists := toExecuteMap[toExec]
 		if !exists {
-			return errors.New("down file does not exist")
+			return fmt.Errorf("run command error: in db there's a executed migration with timestamp %d but migrations down file is missing on filesystem", toExec)
 		}
 
 		content, err := run.Filesystem.ReadMigrationContent(current, filesystem.DirectionDown, config)

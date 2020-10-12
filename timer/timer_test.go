@@ -19,11 +19,12 @@ func TestParseAnyTime(t *testing.T) {
 	}
 
 	tNowWithTime, _ := time.Parse(time.RFC3339, "2020-11-01T11:02:00Z")
+	timerError := "timer error: unable to parse date/time invalid time"
 
 	table := []struct {
 		time string
 		res  time.Time
-		err  error
+		err  *string
 	}{
 		{
 			time: "2020-09-20T15:04:05Z",
@@ -48,7 +49,7 @@ func TestParseAnyTime(t *testing.T) {
 		{
 			time: "invalid time",
 			res:  time.Time{},
-			err:  UnableToParseTimeErr,
+			err:  &timerError,
 		},
 	}
 
@@ -56,6 +57,10 @@ func TestParseAnyTime(t *testing.T) {
 		currentTimer := Timer{Now: now}
 		t, err := currentTimer.ParseTime(v.time)
 		r.Equal(t, v.res)
-		r.Equal(err, v.err)
+		if v.err != nil {
+			r.EqualError(err, *v.err)
+		} else {
+			r.NoError(err)
+		}
 	}
 }

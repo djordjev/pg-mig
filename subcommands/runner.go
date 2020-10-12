@@ -2,7 +2,6 @@ package subcommands
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 	"github.com/djordjev/pg-mig/filesystem"
@@ -48,7 +47,7 @@ func (runner *Runner) Run() error {
 
 	conn, err := runner.Connector(context.Background(), connectionString)
 	if err != nil {
-		return err
+		return fmt.Errorf("run error: unable to connect on database using connection string %s", connectionString)
 	}
 	defer func() {
 		err := conn.Close(context.Background())
@@ -73,7 +72,9 @@ func (runner *Runner) Run() error {
 
 	err = subcommand.Run()
 	if err != nil {
+		// Intercept error and print it here
 		runner.Printer.PrintError(fmt.Sprintf("%v", err))
+		return nil
 	}
 
 	return err
@@ -100,7 +101,7 @@ func (runner *Runner) getSubcommand(base *CommandBase) (Command, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("invalid subcommand %s", runner.Subcommand)
+	return nil, fmt.Errorf("run error: invalid subcommand %s", runner.Subcommand)
 }
 
 func (runner *Runner) createInitFile() error {
@@ -108,7 +109,7 @@ func (runner *Runner) createInitFile() error {
 
 	wd, err := os.Getwd()
 	if err != nil {
-		return err
+		return fmt.Errorf("run error: unable to react current working directory %w", err)
 	}
 
 	path := flagSet.String("path", wd, "filesystem path where migration definitions are stored. Default: current directory")
@@ -121,15 +122,15 @@ func (runner *Runner) createInitFile() error {
 
 	err = flagSet.Parse(runner.Flags)
 	if err != nil {
-		return err
+		return fmt.Errorf("run error: unable to parse flags %+q", runner.Flags)
 	}
 
 	if *dbName == "" {
-		return errors.New("missing database name")
+		return fmt.Errorf("run error: missing database name")
 	}
 
 	if *credentials == "" {
-		return errors.New("missing credentials in form username:password")
+		return fmt.Errorf("run error: missing credentials in form username:password")
 	}
 
 	config := filesystem.Config{

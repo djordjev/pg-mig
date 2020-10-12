@@ -18,7 +18,7 @@ func (add *Add) Run() error {
 
 	err := flagSet.Parse(add.Flags)
 	if err != nil {
-		return err
+		return fmt.Errorf("add command error: unable to parse program flags %w", err)
 	}
 
 	now := add.Timer.Now()

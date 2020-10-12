@@ -28,7 +28,7 @@ func (models *ImplModels) CreateMetaTable() error {
 
 	_, err := db.Exec(context.Background(), fmt.Sprintf(createTable, tableName))
 	if err != nil {
-		return err
+		return fmt.Errorf("db error: unable to create meta table %w", err)
 	}
 
 	return nil
@@ -44,7 +44,7 @@ func (models *ImplModels) GetMigrationsList() ([]int64, error) {
 
 	rows, err := models.Db.Query(context.Background(), query)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("db error: unable to query for migrations list %w", err)
 	}
 	defer rows.Close()
 
@@ -55,7 +55,7 @@ func (models *ImplModels) GetMigrationsList() ([]int64, error) {
 
 		err = rows.Scan(&ts)
 		if err != nil {
-			return result, err
+			return result, fmt.Errorf("db error: unable to scan returned rows from meta table %w", err)
 		}
 
 		result = append(result, ts.Unix())
@@ -88,7 +88,7 @@ func (models *ImplModels) Execute(executionContext ExecutionContext) error {
 
 	err = updateMetaTable(&executionContext, tx)
 	if err != nil {
-		return err
+		return fmt.Errorf("db error: unable to update meta table %w", err)
 	}
 
 	defer func() {
@@ -100,7 +100,7 @@ func (models *ImplModels) Execute(executionContext ExecutionContext) error {
 
 	_, err = tx.Exec(context.Background(), executionContext.Sql)
 	if err != nil {
-		return err
+		return fmt.Errorf("db error: unable to execute migration file %s. Error returned %w", executionContext.Name, err)
 	}
 
 	err = tx.Commit(context.Background())

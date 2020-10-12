@@ -1,7 +1,7 @@
 package filesystem
 
 import (
-	"errors"
+	"fmt"
 	"github.com/spf13/afero"
 	"path/filepath"
 	"regexp"
@@ -16,7 +16,7 @@ func (fs *ImplFilesystem) CreateMigrationFile(name string, location string) erro
 
 	_, err := fs.Fs.Create(filename)
 	if err != nil {
-		return err
+		return fmt.Errorf("filesystem error: unable to create migration file %w", err)
 	}
 
 	return nil
@@ -28,7 +28,7 @@ func (fs *ImplFilesystem) ReadMigrationContent(file MigrationFile, direction Dir
 
 	content, err := afero.ReadFile(fs.Fs, path)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("filesystem error: unable to read migration file content %w", err)
 	}
 
 	return string(content), nil
@@ -45,7 +45,7 @@ func (fs *ImplFilesystem) GetFileTimestamps(from time.Time, to time.Time) (Migra
 
 	files, err := afero.ReadDir(fs.Fs, config.Path)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("filesystem error: unable to read config file directory %w", err)
 	}
 
 	upPattern := regexp.MustCompile("^mig_([0-9]+).*_up.sql$")
@@ -90,14 +90,14 @@ func (fs *ImplFilesystem) GetFileTimestamps(from time.Time, to time.Time) (Migra
 
 func (fs *ImplFilesystem) storeMigrationFileInMap(resultMap map[int64]MigrationFile, submatches []string, isUp bool) error {
 	if len(submatches) < 2 {
-		return errors.New("given filename does not match regex")
+		return fmt.Errorf("filesystem error: given filename does not match regex %+q", submatches)
 	}
 
 	fullName := submatches[0]
 	strTs := submatches[1]
 	intTs, err := strconv.ParseInt(strTs, 10, 64)
 	if err != nil {
-		return err
+		return fmt.Errorf("filesystem error: invalid migration file name %+q %w", submatches, err)
 	}
 
 	entry, ok := resultMap[intTs]

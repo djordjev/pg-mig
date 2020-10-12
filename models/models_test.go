@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"github.com/stretchr/testify/require"
 	"reflect"
 	"testing"
 	"time"
@@ -10,6 +11,7 @@ import (
 var demoError = errors.New("demo error")
 
 func TestCreateMetaTable(t *testing.T) {
+	r := require.New(t)
 	table := []struct {
 		name      string
 		execError error
@@ -28,8 +30,10 @@ func TestCreateMetaTable(t *testing.T) {
 		t.Run(val.name, func(t *testing.T) {
 			m := ImplModels{Db: &mockedDBConnection{execError: val.execError}}
 			err := m.CreateMetaTable()
-			if err != val.execError {
-				t.Fail()
+			if val.execError == nil {
+				r.NoError(err, "should not return error")
+			} else {
+				r.Error(err, "should return error")
 			}
 		})
 	}
@@ -37,6 +41,7 @@ func TestCreateMetaTable(t *testing.T) {
 }
 
 func TestGetMigrationsList(t *testing.T) {
+	r := require.New(t)
 	t1, _ := time.Parse(time.RFC3339, "2020-09-20T15:04:05Z")
 	t2, _ := time.Parse(time.RFC3339, "2020-09-20T15:05:05Z")
 
@@ -90,9 +95,10 @@ func TestGetMigrationsList(t *testing.T) {
 
 			res, err := m.GetMigrationsList()
 
-			if err != val.expectedError {
-				t.Logf("got error when executing GetMigrationsList %v", err)
-				t.Fail()
+			if val.expectedError == nil {
+				r.NoError(err)
+			} else {
+				r.Error(err)
 			}
 
 			if !reflect.DeepEqual(res, val.expected) {

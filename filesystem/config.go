@@ -27,25 +27,25 @@ func (fs *ImplFilesystem) StoreConfig(config Config) error {
 	exists, err := afs.Exists(configFileName)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("filesystem error: unable to check if confg already exists %w", err)
 	}
 
 	if exists {
 		err = afs.Remove(configFileName)
 
 		if err != nil {
-			return err
+			return fmt.Errorf("filesystem error: unable to overwrite existing config %w", err)
 		}
 	}
 
 	data, err := json.Marshal(config)
 	if err != nil {
-		return err
+		return fmt.Errorf("filesystem error: unable to serialize config data %w", err)
 	}
 
 	err = afs.WriteFile(configFileName, data, 0644)
 	if err != nil {
-		return err
+		return fmt.Errorf("filesystem error: unable to write config file %w", err)
 	}
 
 	return nil
@@ -59,12 +59,12 @@ func (fs *ImplFilesystem) LoadConfig() (Config, error) {
 	data, err := afs.ReadFile(configFileName)
 
 	if err != nil {
-		return config, err
+		return config, fmt.Errorf("filesystem error: unable to read config file %w", err)
 	}
 
 	err = json.Unmarshal(data, &config)
 	if err != nil {
-		return config, err
+		return config, fmt.Errorf("filesystem error: unable to desirialize existing configuration %s %w", string(data), err)
 	}
 
 	return config, nil
@@ -74,7 +74,7 @@ func (fs *ImplFilesystem) LoadConfig() (Config, error) {
 func (config *Config) GetConnectionString() (string, error) {
 
 	if config.Credentials == "" || config.DbName == "" || config.DbURL == "" || config.Port == 0 {
-		return "", errors.New("invalid data in config file")
+		return "", errors.New("filesystem error: invalid data in config file")
 	}
 
 	connectionString := fmt.Sprintf("postgres://%s@%s:%d/%s?sslmode=%s", config.Credentials, config.DbURL, config.Port, config.DbName, config.SSL)

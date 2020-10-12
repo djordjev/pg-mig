@@ -1,12 +1,9 @@
 package timer
 
 import (
-	"errors"
+	"fmt"
 	"time"
 )
-
-// Errors
-var UnableToParseTimeErr = errors.New("unable to parse date/time format")
 
 // TimeGetter
 type TimeGetter func() time.Time
@@ -52,5 +49,5 @@ func (timer Timer) ParseTime(inputTime string) (time.Time, error) {
 		}
 	}
 
-	return time.Time{}, UnableToParseTimeErr
+	return time.Time{}, fmt.Errorf("timer error: unable to parse date/time %s", inputTime)
 }

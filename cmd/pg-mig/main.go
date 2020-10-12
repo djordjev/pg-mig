@@ -13,13 +13,12 @@ import (
 )
 
 func main() {
+	printer := subcommands.ImplPrinter{NoColor: true}
 
 	if len(os.Args) < 2 {
-		fmt.Println("Missing command. Please run pg-mig help to see more info")
+		printer.PrintError("Missing command. Please run pg-mig help to see more info")
 		return
 	}
-
-	printer := subcommands.ImplPrinter{NoColor: true}
 
 	runner := subcommands.Runner{
 		Subcommand: os.Args[1],
@@ -30,9 +29,15 @@ func main() {
 		Printer:    &printer,
 	}
 
+	defer func() {
+		if e := recover(); e != nil {
+			fmt.Println("execution error: ", e)
+		}
+	}()
+
 	err := runner.Run()
 	if err != nil {
-		fmt.Println(err)
+		printer.PrintError(err.Error())
 	}
 
 	return
