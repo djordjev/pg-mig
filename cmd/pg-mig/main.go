@@ -17,7 +17,7 @@ func main() {
 
 	if len(os.Args) < 2 {
 		printer.PrintError("Missing command. Please run pg-mig help to see more info")
-		return
+		os.Exit(1)
 	}
 
 	runner := subcommands.Runner{
@@ -32,13 +32,15 @@ func main() {
 	defer func() {
 		if e := recover(); e != nil {
 			fmt.Println("execution error: ", e)
+			os.Exit(1)
+		} else {
+			os.Exit(0)
 		}
 	}()
 
 	err := runner.Run()
 	if err != nil {
 		printer.PrintError(err.Error())
+		os.Exit(1)
 	}
-
-	return
 }
