@@ -3,6 +3,7 @@ package subcommands
 import (
 	"flag"
 	"fmt"
+	"strings"
 )
 
 // Add structure for init command
@@ -26,7 +27,9 @@ func (add *Add) Run() error {
 
 	var nameFormatted string
 	if *name != "" {
-		nameFormatted = fmt.Sprintf("_%s", *name)
+		escapedName := strings.ReplaceAll(*name, " ", "-")
+		underlineEscaped := strings.ReplaceAll(escapedName, "_", "-")
+		nameFormatted = fmt.Sprintf("_%s", underlineEscaped)
 	}
 
 	upName := fmt.Sprintf("mig_%d%s_up.sql", ms, nameFormatted)

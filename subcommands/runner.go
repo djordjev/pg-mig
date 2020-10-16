@@ -74,6 +74,7 @@ func (runner *Runner) Run() error {
 	if err != nil {
 		// Intercept error and print it here
 		runner.Printer.PrintError(fmt.Sprintf("%v", err))
+		os.Exit(1)
 		return nil
 	}
 

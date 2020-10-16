@@ -153,7 +153,13 @@ func (run *Run) executeUpMigrations(stay filesystem.MigrationFileList, inDB []in
 			Name:      mig.Up,
 		}
 
-		run.Printer.PrintUpMigration(fmt.Sprintf("Executing up migration %s", execContext.Name))
+		isEmpty := execContext.Sql == ""
+		emptyText := ""
+		if isEmpty {
+			emptyText = "EMPTY"
+		}
+
+		run.Printer.PrintUpMigration(fmt.Sprintf("Executing up %s migration %s", emptyText, execContext.Name))
 		if !run.isDryRun {
 			err = run.Models.Execute(execContext)
 			if err != nil {
@@ -195,7 +201,13 @@ func (run *Run) executeDownMigrations(down filesystem.MigrationFileList, downIDs
 			Name:      current.Down,
 		}
 
-		run.Printer.PrintDownMigration(fmt.Sprintf("Executing down migration %s", execContext.Name))
+		isEmpty := execContext.Sql == ""
+		emptyText := ""
+		if isEmpty {
+			emptyText = "EMPTY"
+		}
+
+		run.Printer.PrintDownMigration(fmt.Sprintf("Executing %s down migration %s", emptyText, execContext.Name))
 
 		if !run.isDryRun {
 			err = run.Models.Execute(execContext)
