@@ -2,69 +2,143 @@ package models
 
 import (
 	"context"
-	"errors"
 	"github.com/jackc/pgconn"
-	pgproto32 "github.com/jackc/pgproto3/v2"
+	"github.com/jackc/pgproto3/v2"
 	"github.com/jackc/pgx/v4"
+	"github.com/stretchr/testify/mock"
 	"reflect"
 )
 
-var scanError = errors.New("scan error")
-
 type mockedDBConnection struct {
-	pgx.Conn
-	execError  error
-	queryError error
-	queryRes   [][]interface{}
-	scanErr    error
+	mock.Mock
 }
 
-func (conn mockedDBConnection) Exec(_ context.Context, _ string, _ ...interface{}) (pgconn.CommandTag, error) {
-	return nil, conn.execError
+func (m *mockedDBConnection) Begin(ctx context.Context) (pgx.Tx, error) {
+	c := m.Called(ctx)
+	return c.Get(0).(*txImpl), c.Error(1)
 }
 
-func (conn mockedDBConnection) Query(_ context.Context, _ string, _ ...interface{}) (pgx.Rows, error) {
-	if conn.queryError != nil {
-		return nil, conn.queryError
-	}
+func (m *mockedDBConnection) Close(ctx context.Context) error {
+	c := m.Called(ctx)
+	return c.Error(0)
+}
 
-	return &rowsImpl{conn: conn}, nil
+func (m *mockedDBConnection) Exec(ctx context.Context, sql string, arguments ...interface{}) (pgconn.CommandTag, error) {
+	c := m.Called(ctx, sql, arguments)
+	return c.Get(0).(pgconn.CommandTag), c.Error(1)
+}
+
+func (m *mockedDBConnection) Query(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error) {
+	c := m.Called(ctx, sql, args)
+	return c.Get(0).(*rowsImpl), c.Error(1)
 }
 
 type rowsImpl struct {
-	conn mockedDBConnection
-	cnt  int
+	mock.Mock
+	scans []interface{}
+	cnt   int
 }
 
-// pgx.Rows interface implementation
+func (r *rowsImpl) Close() {
+	r.Called()
+}
+
+func (r *rowsImpl) Err() error {
+	c := r.Called()
+	return c.Error(0)
+}
+
+func (r *rowsImpl) CommandTag() pgconn.CommandTag {
+	c := r.Called()
+	return c.Get(0).(pgconn.CommandTag)
+}
+
+func (r *rowsImpl) FieldDescriptions() []pgproto3.FieldDescription {
+	c := r.Called()
+	return c.Get(0).([]pgproto3.FieldDescription)
+}
+
 func (r *rowsImpl) Next() bool {
-	res := r.cnt < len(r.conn.queryRes)
-	r.cnt++
-	return res
+	c := r.Called()
+	return c.Bool(0)
 }
 
 func (r *rowsImpl) Scan(dest ...interface{}) error {
-	pos := r.cnt - 1
-	current := r.conn.queryRes[pos]
+	c := r.Called(dest)
+	cs := r.scans[r.cnt]
+	defer func() { r.cnt++ }()
 
-	if r.conn.scanErr != nil {
-		return r.conn.scanErr
-	}
+	vres := reflect.ValueOf(cs)
+	reflect.ValueOf(dest[0]).Elem().Set(vres)
 
-	for i := 0; i < len(dest); i++ {
-		c := current[i]
-		d := dest[i]
-
-		vres := reflect.ValueOf(c)
-		reflect.ValueOf(d).Elem().Set(vres)
-	}
-
-	return nil
+	return c.Error(0)
 }
 
-func (r *rowsImpl) Close()                                          {}
-func (r *rowsImpl) Err() error                                      { panic("implement me") }
-func (r *rowsImpl) CommandTag() pgconn.CommandTag                   { panic("implement me") }
-func (r *rowsImpl) FieldDescriptions() []pgproto32.FieldDescription { panic("implement me") }
-func (r *rowsImpl) Values() ([]interface{}, error)                  { panic("implement me") }
-func (r *rowsImpl) RawValues() [][]byte                             { panic("implement me") }
+func (r *rowsImpl) Values() ([]interface{}, error) {
+	c := r.Called()
+	return c.Get(0).([]interface{}), c.Error(1)
+}
+
+func (r *rowsImpl) RawValues() [][]byte {
+	c := r.Called()
+	return c.Get(0).([][]byte)
+}
+
+type txImpl struct {
+	mock.Mock
+}
+
+func (t *txImpl) Begin(ctx context.Context) (pgx.Tx, error) {
+	c := t.Called(ctx)
+	return c.Get(0).(pgx.Tx), c.Error(1)
+}
+
+func (t *txImpl) Commit(ctx context.Context) error {
+	c := t.Called(ctx)
+	return c.Error(0)
+}
+
+func (t *txImpl) Rollback(ctx context.Context) error {
+	c := t.Called(ctx)
+	return c.Error(0)
+}
+
+func (t *txImpl) CopyFrom(ctx context.Context, tableName pgx.Identifier, columnNames []string, rowSrc pgx.CopyFromSource) (int64, error) {
+	c := t.Called(ctx, tableName, columnNames, rowSrc)
+	return c.Get(0).(int64), c.Error(1)
+}
+
+func (t *txImpl) SendBatch(ctx context.Context, b *pgx.Batch) pgx.BatchResults {
+	c := t.Called(ctx, b)
+	return c.Get(0).(pgx.BatchResults)
+}
+
+func (t *txImpl) LargeObjects() pgx.LargeObjects {
+	c := t.Called()
+	return c.Get(0).(pgx.LargeObjects)
+}
+
+func (t *txImpl) Prepare(ctx context.Context, name, sql string) (*pgconn.StatementDescription, error) {
+	c := t.Called(ctx, name, sql)
+	return c.Get(0).(*pgconn.StatementDescription), c.Error(1)
+}
+
+func (t *txImpl) Exec(ctx context.Context, sql string, arguments ...interface{}) (commandTag pgconn.CommandTag, err error) {
+	c := t.Called(ctx, sql, arguments)
+	return c.Get(0).(pgconn.CommandTag), c.Error(1)
+}
+
+func (t *txImpl) Query(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error) {
+	c := t.Called(ctx, sql, args)
+	return c.Get(0).(*rowsImpl), c.Error(1)
+}
+
+func (t *txImpl) QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row {
+	c := t.Called(ctx, sql, args)
+	return c.Get(0).(*rowsImpl)
+}
+
+func (t *txImpl) Conn() *pgx.Conn {
+	c := t.Called()
+	return c.Get(0).(*pgx.Conn)
+}

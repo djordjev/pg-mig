@@ -13,6 +13,7 @@ import (
 const cmdInit = "init"
 const cmdAdd = "add"
 const cmdRun = "run"
+const cmdSquash = "squash"
 
 // Runner structure used for instantiating selected subcommand
 type Runner struct {
@@ -99,6 +100,12 @@ func (runner *Runner) getSubcommand(base *CommandBase) (Command, error) {
 		{
 			run := Run{CommandBase: *base}
 			return &run, nil
+		}
+
+	case cmdSquash:
+		{
+			squash := Squash{CommandBase: *base}
+			return &squash, nil
 		}
 	}
 

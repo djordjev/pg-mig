@@ -15,6 +15,11 @@ type mockedModels struct {
 	executeError           error
 }
 
+func (m mockedModels) SquashMigrations(i int64, i2 int64) error {
+	c := m.Called(i, i2)
+	return c.Error(0)
+}
+
 func (m mockedModels) CreateMetaTable() error {
 	return m.createMetaTableError
 }
@@ -37,6 +42,11 @@ type mockedFilesystem struct {
 	createMigrationFileError  error
 	readMigrationContentRes   string
 	readMigrationContentError error
+}
+
+func (m *mockedFilesystem) DeleteMigrationFiles(list filesystem.MigrationFileList) error {
+	c := m.Called(list)
+	return c.Error(0)
 }
 
 func (m *mockedFilesystem) StoreConfig(_ filesystem.Config) error {

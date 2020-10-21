@@ -19,14 +19,7 @@ type ImplModels struct {
 func (models *ImplModels) CreateMetaTable() error {
 	db := models.Db
 
-	createTable := `
-		create table if not exists %s (
-			id serial primary key,
-			ts timestamptz not null
-		)
-	`
-
-	_, err := db.Exec(context.Background(), fmt.Sprintf(createTable, tableName))
+	_, err := db.Exec(context.Background(), fmt.Sprintf(createMetaTableQuery, tableName))
 	if err != nil {
 		return fmt.Errorf("db error: unable to create meta table %w", err)
 	}
@@ -37,12 +30,7 @@ func (models *ImplModels) CreateMetaTable() error {
 // GetMigrationsList - fetches timestamps of migrations that has
 // been executed in current DB
 func (models *ImplModels) GetMigrationsList() ([]int64, error) {
-
-	query := `
-		select ts from __pg_mig_meta order by ts asc
-	`
-
-	rows, err := models.Db.Query(context.Background(), query)
+	rows, err := models.Db.Query(context.Background(), fmt.Sprintf(getMigrationsListQuery, tableName))
 	if err != nil {
 		return nil, fmt.Errorf("db error: unable to query for migrations list %w", err)
 	}
@@ -64,6 +52,42 @@ func (models *ImplModels) GetMigrationsList() ([]int64, error) {
 	return result, nil
 }
 
+// SquashMigrations deletes all migration instances in meta table between given timestamps (both inclusive).
+// and writes a new squash migration with timestamp set to `to` variable value
+func (models *ImplModels) SquashMigrations(from int64, to int64) error {
+	tx, err := models.Db.Begin(context.Background())
+	if err != nil {
+		return fmt.Errorf("unable to start transaction %w", err)
+	}
+
+	defer func() {
+		err := tx.Rollback(context.Background())
+		if err != nil && err != pgx.ErrTxClosed {
+			panic(err)
+		}
+	}()
+
+	delQuery := fmt.Sprintf("delete from %s where ts >= %d and ts <= %d;", tableName, from, to)
+
+	_, err = tx.Exec(context.Background(), delQuery)
+	if err != nil {
+		return fmt.Errorf("db error: unable to squash migrations %w", err)
+	}
+
+	addQuery := fmt.Sprintf("insert into %s (ts) values ($1);", tableName)
+	_, err = tx.Exec(context.Background(), addQuery, time.Unix(to, 0))
+	if err != nil {
+		return fmt.Errorf("db error: unable to write squash migration %w", err)
+	}
+
+	err = tx.Commit(context.Background())
+	if err != nil {
+		panic(err)
+	}
+
+	return nil
+}
+
 func updateMetaTable(executionContext *ExecutionContext, tx pgx.Tx) error {
 	unixTs := time.Unix(executionContext.Timestamp, 0)
 
@@ -80,6 +104,7 @@ func updateMetaTable(executionContext *ExecutionContext, tx pgx.Tx) error {
 	return err
 }
 
+// Execute runs a migration within a transaction and updates meta table
 func (models *ImplModels) Execute(executionContext ExecutionContext) error {
 	tx, err := models.Db.Begin(context.Background())
 	if err != nil {

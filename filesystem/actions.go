@@ -22,6 +22,61 @@ func (fs *ImplFilesystem) CreateMigrationFile(name string, location string) erro
 	return nil
 }
 
+// DeleteMigrationFiles - removed given migration files from FS
+func (fs *ImplFilesystem) DeleteMigrationFiles(list MigrationFileList) error {
+	for _, file := range list {
+		up, down, err := fs.getMigrationsForTimestamp(file.Timestamp)
+		if err != nil {
+			return err
+		}
+
+		err = fs.Fs.Remove(up)
+		if err != nil {
+			return err
+		}
+
+		err = fs.Fs.Remove(down)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (fs *ImplFilesystem) getMigrationsForTimestamp(ts int64) (up string, down string, e error) {
+	config, err := fs.LoadConfig()
+	if err != nil {
+		e = err
+		return
+	}
+
+	files, err := afero.ReadDir(fs.Fs, config.Path)
+	if err != nil {
+		e = fmt.Errorf("filesystem error: unable to read config file directory %w", err)
+		return
+	}
+
+	upPattern := regexp.MustCompile(fmt.Sprintf("^mig_%d*_up.sql$", ts))
+	downPattern := regexp.MustCompile(fmt.Sprintf("^mig_%d*_down.sql$", ts))
+
+	for _, file := range files {
+		if upPattern.FindString(file.Name()) != "" {
+			up = filepath.Join(config.Path, file.Name())
+		}
+
+		if downPattern.FindString(file.Name()) != "" {
+			down = filepath.Join(config.Path, file.Name())
+		}
+
+		if up != "" && down != "" {
+			return
+		}
+	}
+
+	return "", "", fmt.Errorf("filesystem error: unable to find migrations for %d", ts)
+}
+
 // ReadMigrationContent for specified migration file reads content as a string
 func (fs *ImplFilesystem) ReadMigrationContent(file MigrationFile, direction Direction, config Config) (string, error) {
 	path := file.GetFileName(config, direction)
