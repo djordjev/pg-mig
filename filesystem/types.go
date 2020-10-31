@@ -34,5 +34,5 @@ type Filesystem interface {
 	CreateMigrationFile(string, string) error
 	ReadMigrationContent(MigrationFile, Direction, Config) (string, error)
 	GetFileTimestamps(time.Time, time.Time) (MigrationFileList, error)
-	DeleteMigrationFiles(MigrationFileList) error
+	Squash(MigrationFileList) error
 }

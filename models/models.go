@@ -54,7 +54,7 @@ func (models *ImplModels) GetMigrationsList() ([]int64, error) {
 
 // SquashMigrations deletes all migration instances in meta table between given timestamps (both inclusive).
 // and writes a new squash migration with timestamp set to `to` variable value
-func (models *ImplModels) SquashMigrations(from int64, to int64) error {
+func (models *ImplModels) SquashMigrations(from int64, to int64, name int64) error {
 	tx, err := models.Db.Begin(context.Background())
 	if err != nil {
 		return fmt.Errorf("unable to start transaction %w", err)
@@ -75,7 +75,7 @@ func (models *ImplModels) SquashMigrations(from int64, to int64) error {
 	}
 
 	addQuery := fmt.Sprintf("insert into %s (ts) values ($1);", tableName)
-	_, err = tx.Exec(context.Background(), addQuery, time.Unix(to, 0))
+	_, err = tx.Exec(context.Background(), addQuery, time.Unix(name, 0))
 	if err != nil {
 		return fmt.Errorf("db error: unable to write squash migration %w", err)
 	}

@@ -15,21 +15,21 @@ type mockedModels struct {
 	executeError           error
 }
 
-func (m mockedModels) SquashMigrations(i int64, i2 int64) error {
-	c := m.Called(i, i2)
+func (m *mockedModels) SquashMigrations(i int64, i2 int64, i3 int64) error {
+	c := m.Called(i, i2, i3)
 	return c.Error(0)
 }
 
-func (m mockedModels) CreateMetaTable() error {
+func (m *mockedModels) CreateMetaTable() error {
 	return m.createMetaTableError
 }
 
-func (m mockedModels) GetMigrationsList() ([]int64, error) {
+func (m *mockedModels) GetMigrationsList() ([]int64, error) {
 	c := m.Called()
 	return c.Get(0).([]int64), c.Error(1)
 }
 
-func (m mockedModels) Execute(executionContext models.ExecutionContext) error {
+func (m *mockedModels) Execute(executionContext models.ExecutionContext) error {
 	c := m.Called(executionContext)
 	return c.Error(0)
 }
@@ -42,6 +42,11 @@ type mockedFilesystem struct {
 	createMigrationFileError  error
 	readMigrationContentRes   string
 	readMigrationContentError error
+}
+
+func (m *mockedFilesystem) Squash(list filesystem.MigrationFileList) error {
+	c := m.Called(list)
+	return c.Error(0)
 }
 
 func (m *mockedFilesystem) DeleteMigrationFiles(list filesystem.MigrationFileList) error {
@@ -75,12 +80,12 @@ type mockedPrinter struct {
 	mock.Mock
 }
 
-func (m mockedPrinter) PrintUpMigration(_ string) {}
+func (m *mockedPrinter) PrintUpMigration(_ string) {}
 
-func (m mockedPrinter) PrintDownMigration(_ string) {}
+func (m *mockedPrinter) PrintDownMigration(_ string) {}
 
-func (m mockedPrinter) PrintError(_ string) {}
+func (m *mockedPrinter) PrintError(_ string) {}
 
-func (m mockedPrinter) PrintSuccess(_ string) {}
+func (m *mockedPrinter) PrintSuccess(_ string) {}
 
-func (m mockedPrinter) SetNoColor(_ bool) {}
+func (m *mockedPrinter) SetNoColor(_ bool) {}

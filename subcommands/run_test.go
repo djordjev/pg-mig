@@ -42,7 +42,7 @@ func TestGetMigrationFiles(t *testing.T) {
 
 	run := Run{
 		CommandBase: CommandBase{
-			Models:     mockedModels{},
+			Models:     &mockedModels{},
 			Filesystem: mockFS,
 			Timer:      timer.Timer{Now: buildGetNow("2020-09-20T15:00:00Z")},
 		},
@@ -205,7 +205,7 @@ func TestExecuteUpMigrations(t *testing.T) {
 				CommandBase: CommandBase{
 					Filesystem: fs,
 					Models:     m,
-					Printer:    mockedPrinter{},
+					Printer:    &mockedPrinter{},
 				},
 			}
 
@@ -282,7 +282,7 @@ func TestExecuteDownMigrations(t *testing.T) {
 				CommandBase: CommandBase{
 					Filesystem: fs,
 					Models:     m,
-					Printer:    mockedPrinter{},
+					Printer:    &mockedPrinter{},
 				},
 			}
 
@@ -483,7 +483,7 @@ func TestRun(t *testing.T) {
 					Timer:      timer.Timer{Now: getNow},
 					Models:     &mockedModels,
 					Flags:      v.flags,
-					Printer:    mockedPrinter{},
+					Printer:    &mockedPrinter{},
 				},
 			}
 			_ = r.Run()

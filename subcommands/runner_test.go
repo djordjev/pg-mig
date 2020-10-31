@@ -114,7 +114,7 @@ func TestCreateInitFile(t *testing.T) {
 
 	for i := 0; i < len(table); i++ {
 		test := table[i]
-		runner := Runner{Flags: test.flags, Fs: &filesystem.ImplFilesystem{Fs: test.fs}, Printer: mockedPrinter{}}
+		runner := Runner{Flags: test.flags, Fs: &filesystem.ImplFilesystem{Fs: test.fs}, Printer: &mockedPrinter{}}
 
 		err := runner.createInitFile()
 
@@ -165,7 +165,7 @@ func TestRunnerRun(t *testing.T) {
 		Subcommand: cmdInit,
 		Flags:      []string{"-name=main_db", "-credentials=postgres:pg_pass"},
 		Connector:  connector,
-		Printer:    mockedPrinter{},
+		Printer:    &mockedPrinter{},
 	}
 
 	err := runner.Run()

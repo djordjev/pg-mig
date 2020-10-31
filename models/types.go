@@ -20,7 +20,7 @@ type Models interface {
 	CreateMetaTable() error
 	GetMigrationsList() ([]int64, error)
 	Execute(ExecutionContext) error
-	SquashMigrations(int64, int64) error
+	SquashMigrations(int64, int64, int64) error
 }
 
 type ExecutionContext struct {

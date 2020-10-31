@@ -23,7 +23,7 @@ func (fs *ImplFilesystem) CreateMigrationFile(name string, location string) erro
 }
 
 // DeleteMigrationFiles - removed given migration files from FS
-func (fs *ImplFilesystem) DeleteMigrationFiles(list MigrationFileList) error {
+func (fs *ImplFilesystem) deleteMigrationFiles(list MigrationFileList) error {
 	for _, file := range list {
 		up, down, err := fs.getMigrationsForTimestamp(file.Timestamp)
 		if err != nil {
@@ -42,6 +42,84 @@ func (fs *ImplFilesystem) DeleteMigrationFiles(list MigrationFileList) error {
 	}
 
 	return nil
+}
+
+// Squash squashes files from given list into one up migration and one down migration
+func (fs *ImplFilesystem) Squash(files MigrationFileList) (err error) {
+	if len(files) == 0 {
+		err = fmt.Errorf("filesystem error: No files to squash")
+		return
+	}
+
+	config, err := fs.LoadConfig()
+	if err != nil {
+		return err
+	}
+
+	up := make([]string, 0, len(files))
+	down := make([]string, 0, len(files))
+
+	for _, file := range files {
+		upContent, err := fs.ReadMigrationContent(file, DirectionUp, config)
+		if err != nil {
+			return err
+		}
+
+		upComment := fmt.Sprintf("-- migration %d UP\n", file.Timestamp)
+		up = append(up, fmt.Sprintf("%s%s%s", upComment, upContent, "\n"))
+
+		downContent, err := fs.ReadMigrationContent(file, DirectionDown, config)
+		if err != nil {
+			return err
+		}
+
+		downComment := fmt.Sprintf("-- migration %d DOWN\n", file.Timestamp)
+		down = append(down, downComment, downContent, "\n")
+	}
+
+	lastTs := files[len(files)-1]
+	upName := fmt.Sprintf("mig_%d_%s_up.sql", lastTs.Timestamp, "squashed")
+	err = fs.writeFile(up, upName, config)
+	if err != nil {
+		return
+	}
+
+	// Reverse down migrations
+	for i := 0; i < len(down)/2; i++ {
+		j := len(down) - i - 1
+		down[i], down[j] = down[j], down[i]
+	}
+
+	downName := fmt.Sprintf("mig_%d_%s_down.sql", lastTs.Timestamp, "squashed")
+	err = fs.writeFile(down, downName, config)
+	if err != nil {
+		return
+	}
+
+	err = fs.deleteMigrationFiles(files)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+func (fs *ImplFilesystem) writeFile(migrations []string, name string, config Config) (err error) {
+	filename := filepath.Join(config.Path, name)
+
+	file, err := fs.Fs.Create(filename)
+	if err != nil {
+		err = fmt.Errorf("filesystem error: unable to create migration file for squash %w", err)
+		return
+	}
+
+	defer file.Close()
+
+	for _, mig := range migrations {
+		file.WriteString(mig)
+	}
+
+	return
 }
 
 func (fs *ImplFilesystem) getMigrationsForTimestamp(ts int64) (up string, down string, e error) {
