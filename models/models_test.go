@@ -239,5 +239,83 @@ func TestExecute(t *testing.T) {
 }
 
 func TestSquashMigrations(t *testing.T) {
-	t.Skip("To implement")
+	r := require.New(t)
+	table := []struct {
+		name        string
+		txError     error
+		delError    error
+		addError    error
+		commitError error
+		returnError bool
+	}{
+		{
+			name: "runs",
+		},
+		{
+			name:        "txError",
+			txError:     errors.New("tx error"),
+			returnError: true,
+		},
+		{
+			name:        "delete error",
+			delError:    errors.New("delete error"),
+			returnError: true,
+		},
+		{
+			name:        "add error",
+			addError:    errors.New("add error"),
+			returnError: true,
+		},
+		{
+			name:        "commit error",
+			commitError: errors.New("commit error"),
+			returnError: true,
+		},
+	}
+
+	for _, test := range table {
+		t.Run(test.name, func(t *testing.T) {
+			mockConn := mockedDBConnection{}
+			tx := txImpl{}
+
+			mockConn.On("Begin", mock.Anything).Return(&tx, test.txError)
+
+			m := ImplModels{Db: &mockConn}
+
+			from := int64(0)
+			to := int64(10000)
+			name := int64(900)
+
+			expectedDelQuery := fmt.Sprintf("delete from %s where ts >= %d and ts <= %d;",
+				tableName, from, to)
+
+			tx.On("Exec", mock.Anything, expectedDelQuery, mock.Anything).
+				Return(pgconn.CommandTag{}, test.delError).Once()
+
+			expectedAddQuery := fmt.Sprintf("insert into %s (ts) values ($1);", tableName)
+
+			tx.On("Exec", mock.Anything, expectedAddQuery, []interface{}{time.Unix(name, 0)}).
+				Return(pgconn.CommandTag{}, test.addError).Once()
+
+			tx.On("Commit", mock.Anything).Return(test.commitError).Once()
+
+			tx.On("Rollback", mock.Anything).Return(nil)
+
+			var err error
+			if test.commitError == nil {
+				err = m.SquashMigrations(from, to, name)
+
+				if test.returnError {
+					r.Error(err)
+				} else {
+					r.NoError(err)
+				}
+			} else {
+				r.PanicsWithError(test.commitError.Error(), func() {
+					err = m.SquashMigrations(from, to, name)
+				})
+			}
+
+		})
+	}
 }

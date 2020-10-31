@@ -39,7 +39,7 @@ func (squash *Squash) Run() error {
 		return err
 	}
 
-	last := inDB[len(inDB) - 1]
+	last := inDB[len(inDB)-1]
 
 	// Safe to squash migrations
 	err = squash.Models.SquashMigrations(from.Unix(), to.Unix(), last)
@@ -61,7 +61,18 @@ func (squash *Squash) getSquash(from time.Time, to time.Time) (migrations filesy
 		return
 	}
 
-	inDB, err = squash.Models.GetMigrationsList()
+	dbMigs, err := squash.Models.GetMigrationsList()
+	fromTS := from.Unix()
+	toTS := to.Unix()
+
+	inDB = make([]int64, 0, 0)
+	for _, mig := range dbMigs {
+		if mig >= fromTS && mig <= toTS {
+			inDB = append(inDB, mig)
+		}
+
+	}
+
 	if err != nil {
 		return
 	}

@@ -74,7 +74,7 @@ func (fs *ImplFilesystem) Squash(files MigrationFileList) (err error) {
 		}
 
 		downComment := fmt.Sprintf("-- migration %d DOWN\n", file.Timestamp)
-		down = append(down, downComment, downContent, "\n")
+		down = append(down, fmt.Sprintf("%s%s%s", downComment, downContent, "\n"))
 	}
 
 	lastTs := files[len(files)-1]

@@ -3,6 +3,7 @@ package filesystem
 import (
 	"fmt"
 	"github.com/spf13/afero"
+	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
 )
@@ -213,5 +214,101 @@ func TestReadMigrationContent(t *testing.T) {
 	_, err = fsystem.ReadMigrationContent(file, DirectionDown, config)
 	if err == nil {
 		t.Fail()
+	}
+}
+
+func TestSquash(t *testing.T) {
+	r := require.New(t)
+	table := []struct {
+		name           string
+		files          MigrationFileList
+		returnError    bool
+		deletedFiles   []string
+		remainingFiles []string
+		upFilename     string
+		upContent      string
+		downFilename   string
+		downContent    string
+	}{
+		{
+			name: "successfully squashes files all files",
+			files: MigrationFileList{
+				MigrationFile{Timestamp: 1, Up: "mig_1_up.sql", Down: "mig_1_down.sql"},
+				MigrationFile{Timestamp: 2, Up: "mig_2_up.sql", Down: "mig_2_down.sql"},
+				MigrationFile{Timestamp: 3, Up: "mig_3_up.sql", Down: "mig_3_down.sql"},
+			},
+			deletedFiles:   []string{"mig_1_up.sql", "mig_2_up.sql", "mig_3_up.sql", "mig_1_down.sql", "mig_2_down.sql", "mig_3_down.sql"},
+			remainingFiles: []string{"mig_3_squashed_up.sql", "mig_3_squashed_down.sql"},
+			upFilename:     "mig_3_squashed_up.sql",
+			upContent:      "-- migration 1 UP\nup mig 1\n-- migration 2 UP\nup mig 2\n-- migration 3 UP\nup mig 3\n",
+			downFilename:   "mig_3_squashed_down.sql",
+			downContent:    "-- migration 3 DOWN\ndown mig 3\n-- migration 2 DOWN\ndown mig 2\n-- migration 1 DOWN\ndown mig 1\n",
+		},
+		{
+			name: "successfully squashes first two files",
+			files: MigrationFileList{
+				MigrationFile{Timestamp: 1, Up: "mig_1_up.sql", Down: "mig_1_down.sql"},
+				MigrationFile{Timestamp: 2, Up: "mig_2_up.sql", Down: "mig_2_down.sql"},
+			},
+			deletedFiles:   []string{"mig_1_up.sql", "mig_2_up.sql", "mig_1_down.sql", "mig_2_down.sql"},
+			remainingFiles: []string{"mig_2_squashed_up.sql", "mig_2_squashed_down.sql", "mig_3_up.sql", "mig_3_down.sql"},
+			upFilename:     "mig_2_squashed_up.sql",
+			upContent:      "-- migration 1 UP\nup mig 1\n-- migration 2 UP\nup mig 2\n",
+			downFilename:   "mig_2_squashed_down.sql",
+			downContent:    "-- migration 2 DOWN\ndown mig 2\n-- migration 1 DOWN\ndown mig 1\n",
+		},
+		{
+			name:           "returns error",
+			files:          MigrationFileList{},
+			deletedFiles:   []string{},
+			remainingFiles: []string{"mig_1_up.sql", "mig_2_up.sql", "mig_3_up.sql", "mig_1_down.sql", "mig_2_down.sql", "mig_3_down.sql"},
+			returnError:    true,
+		},
+	}
+
+	for _, test := range table {
+		t.Run(test.name, func(t *testing.T) {
+			fs := afero.NewMemMapFs()
+			fsystem := &ImplFilesystem{Fs: fs}
+
+			afero.WriteFile(fs, "mig_1_up.sql", []byte("up mig 1"), 0644)
+			afero.WriteFile(fs, "mig_1_down.sql", []byte("down mig 1"), 0644)
+
+			afero.WriteFile(fs, "mig_2_up.sql", []byte("up mig 2"), 0644)
+			afero.WriteFile(fs, "mig_2_down.sql", []byte("down mig 2"), 0644)
+
+			afero.WriteFile(fs, "mig_3_up.sql", []byte("up mig 3"), 0644)
+			afero.WriteFile(fs, "mig_3_down.sql", []byte("down mig 3"), 0644)
+
+			afero.WriteFile(fs, configFileName, []byte(validContent), 0644)
+
+			err := fsystem.Squash(test.files)
+
+			for _, f := range test.deletedFiles {
+				exists, _ := afero.Exists(fs, f)
+				r.False(exists)
+			}
+
+			for _, f := range test.remainingFiles {
+				exists, _ := afero.Exists(fs, f)
+				r.True(exists)
+			}
+
+			if test.upFilename != "" {
+				content, _ := afero.ReadFile(fs, test.upFilename)
+				r.Equal(string(content), test.upContent)
+			}
+
+			if test.downFilename != "" {
+				content, _ := afero.ReadFile(fs, test.downFilename)
+				r.Equal(string(content), test.downContent)
+			}
+
+			if test.returnError {
+				r.Error(err)
+			} else {
+				r.NoError(err)
+			}
+		})
 	}
 }
