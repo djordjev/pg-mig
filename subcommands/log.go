@@ -1,6 +1,7 @@
 package subcommands
 
 import (
+	"flag"
 	"fmt"
 	"github.com/djordjev/pg-mig/filesystem"
 	"sort"
@@ -20,6 +21,19 @@ type logGroup struct {
 
 // Run displays a log of currently present migrations
 func (log *Log) Run() error {
+	flagSet := flag.NewFlagSet("log", flag.ExitOnError)
+
+	help := flagSet.Bool("help", false, "Prints help for log command. Log command does not accept any flags")
+
+	err := flagSet.Parse(log.Flags)
+	if err != nil {
+		return fmt.Errorf("log command error: unable to parse program flags %w", err)
+	}
+
+	if help != nil {
+		flagSet.PrintDefaults()
+		return nil
+	}
 
 	migrations, err := log.getData()
 	if err != nil {

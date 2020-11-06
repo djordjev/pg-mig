@@ -21,10 +21,16 @@ func (run *Run) Run() error {
 
 	strTime := flagSet.String("time", "", "Time on which you want to upgrade/downgrade DB. Omit for current time")
 	dryRun := flagSet.Bool("dry-run", false, "Run command in order to just print migrations that would be executed for given args without actually executing them.")
+	help := flagSet.Bool("help", false, "Prints help for run command")
 
 	err := flagSet.Parse(run.Flags)
 	if err != nil {
 		return fmt.Errorf("run command error: unable to parse program flags %w", err)
+	}
+
+	if help != nil {
+		flagSet.PrintDefaults()
+		return nil
 	}
 
 	run.isDryRun = *dryRun

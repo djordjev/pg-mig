@@ -15,6 +15,7 @@ const cmdAdd = "add"
 const cmdRun = "run"
 const cmdSquash = "squash"
 const cmdLog = "log"
+const cmdHelp = "help"
 
 // Runner structure used for instantiating selected subcommand
 type Runner struct {
@@ -113,6 +114,11 @@ func (runner *Runner) getSubcommand(base *CommandBase) (Command, error) {
 			log := Log{CommandBase: *base}
 			return &log, nil
 		}
+	case cmdHelp:
+		{
+			help := Help{}
+			return &help, nil
+		}
 	}
 
 	return nil, fmt.Errorf("run error: invalid subcommand %s", runner.Subcommand)
@@ -133,10 +139,16 @@ func (runner *Runner) createInitFile() error {
 	useSSL := flagSet.String("ssl", "disable", "Whether or not to use ssl. Defaults to disable.")
 	port := flagSet.Int("port", 5432, "Port on which PostgreSQL instance is running. Defaults to 5432")
 	noColor := flagSet.Bool("nocolor", false, "prevent pg-mig for printing emojis and colored text. Useful on terminals not supporting unicode.")
+	help := flagSet.Bool("help", false, "Prints help for init command")
 
 	err = flagSet.Parse(runner.Flags)
 	if err != nil {
 		return fmt.Errorf("run error: unable to parse flags %+q", runner.Flags)
+	}
+
+	if help != nil {
+		flagSet.PrintDefaults()
+		return nil
 	}
 
 	if *dbName == "" {

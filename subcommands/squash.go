@@ -18,10 +18,16 @@ func (squash *Squash) Run() error {
 
 	fromStr := flagSet.String("from", "", "Time of first migration that needs to be squashed")
 	toStr := flagSet.String("to", "", "Time of the last migration that needs to be squashed")
+	help := flagSet.Bool("help", false, "Prints help for squash command")
 
 	err := flagSet.Parse(squash.Flags)
 	if err != nil {
 		return fmt.Errorf("squash command error: unable to parse program flags %w", err)
+	}
+
+	if help != nil {
+		flagSet.PrintDefaults()
+		return nil
 	}
 
 	from, err := squash.Timer.ParseTime(*fromStr)

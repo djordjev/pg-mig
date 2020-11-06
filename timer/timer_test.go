@@ -54,13 +54,13 @@ func TestParseAnyTime(t *testing.T) {
 		},
 		{
 			time: fmt.Sprintf("%d", t1.Unix()),
-			res: t1,
-			err: nil,
+			res:  t1,
+			err:  nil,
 		},
 	}
 
 	for _, v := range table {
-		t.Run(v.time, func (t *testing.T) {
+		t.Run(v.time, func(t *testing.T) {
 			currentTimer := Timer{Now: now}
 			time, err := currentTimer.ParseTime(v.time)
 			isEqual := v.res.Equal(time)
