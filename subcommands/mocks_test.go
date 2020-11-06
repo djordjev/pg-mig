@@ -80,12 +80,26 @@ type mockedPrinter struct {
 	mock.Mock
 }
 
-func (m *mockedPrinter) PrintUpMigration(_ string) {}
+func (m *mockedPrinter) PrintUpMigration(text string) {
+	m.Called(text)
+}
 
-func (m *mockedPrinter) PrintDownMigration(_ string) {}
+func (m *mockedPrinter) PrintDownMigration(text string) {
+	m.Called(text)
+}
 
-func (m *mockedPrinter) PrintError(_ string) {}
+func (m *mockedPrinter) PrintError(text string) {
+	m.Called(text)
+}
 
-func (m *mockedPrinter) PrintSuccess(_ string) {}
+func (m *mockedPrinter) PrintSuccess(text string) {
+	m.Called(text)
+}
 
-func (m *mockedPrinter) SetNoColor(_ bool) {}
+func (m *mockedPrinter) PrintMigrations(date string, onFS string, inDB string) {
+	m.Called(date, onFS, inDB)
+}
+
+func (m *mockedPrinter) SetNoColor(color bool) {
+	m.Called(color)
+}

@@ -14,6 +14,7 @@ const cmdInit = "init"
 const cmdAdd = "add"
 const cmdRun = "run"
 const cmdSquash = "squash"
+const cmdLog = "log"
 
 // Runner structure used for instantiating selected subcommand
 type Runner struct {
@@ -106,6 +107,11 @@ func (runner *Runner) getSubcommand(base *CommandBase) (Command, error) {
 		{
 			squash := Squash{CommandBase: *base}
 			return &squash, nil
+		}
+	case cmdLog:
+		{
+			log := Log{CommandBase: *base}
+			return &log, nil
 		}
 	}
 

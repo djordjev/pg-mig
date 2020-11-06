@@ -200,12 +200,15 @@ func TestExecuteUpMigrations(t *testing.T) {
 
 			fs := &mockedFilesystem{}
 			m := &mockedModels{}
+			mp := mockedPrinter{}
+
+			mp.On("PrintUpMigration", mock.Anything)
 
 			run := Run{
 				CommandBase: CommandBase{
 					Filesystem: fs,
 					Models:     m,
-					Printer:    &mockedPrinter{},
+					Printer:    &mp,
 				},
 			}
 
@@ -277,12 +280,15 @@ func TestExecuteDownMigrations(t *testing.T) {
 
 			fs := &mockedFilesystem{}
 			m := &mockedModels{}
+			mp := mockedPrinter{}
+
+			mp.On("PrintDownMigration", mock.Anything)
 
 			run := Run{
 				CommandBase: CommandBase{
 					Filesystem: fs,
 					Models:     m,
-					Printer:    &mockedPrinter{},
+					Printer:    &mp,
 				},
 			}
 
@@ -360,6 +366,7 @@ func TestRun(t *testing.T) {
 		inDB     []int64
 		flags    []string
 		expected []models.ExecutionContext
+		printer  string
 	}{
 		{
 			name:  "execute all ups no time",
@@ -370,6 +377,7 @@ func TestRun(t *testing.T) {
 				{Timestamp: t2.Unix(), Name: fmt.Sprintf("mig_%d_up.sql", t2.Unix()), IsUp: true, Sql: "mig_2_up_sql"},
 				{Timestamp: t3.Unix(), Name: fmt.Sprintf("mig_%d_up.sql", t3.Unix()), IsUp: true, Sql: "mig_3_up_sql"},
 			},
+			printer: "PrintUpMigration",
 		},
 		{
 			name:  "execute all ups future time",
@@ -380,6 +388,7 @@ func TestRun(t *testing.T) {
 				{Timestamp: t2.Unix(), Name: fmt.Sprintf("mig_%d_up.sql", t2.Unix()), IsUp: true, Sql: "mig_2_up_sql"},
 				{Timestamp: t3.Unix(), Name: fmt.Sprintf("mig_%d_up.sql", t3.Unix()), IsUp: true, Sql: "mig_3_up_sql"},
 			},
+			printer: "PrintUpMigration",
 		},
 		{
 			name:  "execute up that was previously skipped",
@@ -389,12 +398,14 @@ func TestRun(t *testing.T) {
 				{Timestamp: t1.Unix(), Name: fmt.Sprintf("mig_%d_up.sql", t1.Unix()), IsUp: true, Sql: "mig_1_up_sql"},
 				{Timestamp: t3.Unix(), Name: fmt.Sprintf("mig_%d_up.sql", t3.Unix()), IsUp: true, Sql: "mig_3_up_sql"},
 			},
+			printer: "PrintUpMigration",
 		},
 		{
 			name:     "execute up when all ups has already been executed",
 			inDB:     []int64{t1.Unix(), t2.Unix(), t3.Unix()},
 			flags:    []string{"-time=2020-10-24T10:00:00Z"},
 			expected: []models.ExecutionContext{},
+			printer:  "PrintUpMigration",
 		},
 		{
 			name:  "execute second but not third migration",
@@ -403,6 +414,7 @@ func TestRun(t *testing.T) {
 			expected: []models.ExecutionContext{
 				{Timestamp: t2.Unix(), Name: fmt.Sprintf("mig_%d_up.sql", t2.Unix()), IsUp: true, Sql: "mig_2_up_sql"},
 			},
+			printer: "PrintUpMigration",
 		},
 		{
 			name:  "execute last down migration",
@@ -411,6 +423,7 @@ func TestRun(t *testing.T) {
 			expected: []models.ExecutionContext{
 				{Timestamp: t3.Unix(), Name: fmt.Sprintf("mig_%d_down.sql", t3.Unix()), IsUp: false, Sql: "mig_3_down_sql"},
 			},
+			printer: "PrintDownMigration",
 		},
 		{
 			name:  "execute last two down migration",
@@ -420,6 +433,7 @@ func TestRun(t *testing.T) {
 				{Timestamp: t2.Unix(), Name: fmt.Sprintf("mig_%d_down.sql", t2.Unix()), IsUp: false, Sql: "mig_2_down_sql"},
 				{Timestamp: t3.Unix(), Name: fmt.Sprintf("mig_%d_down.sql", t3.Unix()), IsUp: false, Sql: "mig_3_down_sql"},
 			},
+			printer: "PrintDownMigration",
 		},
 		{
 			name:  "execute all down migration",
@@ -430,6 +444,7 @@ func TestRun(t *testing.T) {
 				{Timestamp: t2.Unix(), Name: fmt.Sprintf("mig_%d_down.sql", t2.Unix()), IsUp: false, Sql: "mig_2_down_sql"},
 				{Timestamp: t3.Unix(), Name: fmt.Sprintf("mig_%d_down.sql", t3.Unix()), IsUp: false, Sql: "mig_3_down_sql"},
 			},
+			printer: "PrintDownMigration",
 		},
 		{
 			name:  "execute push",
@@ -438,6 +453,7 @@ func TestRun(t *testing.T) {
 			expected: []models.ExecutionContext{
 				{Timestamp: t3.Unix(), Name: fmt.Sprintf("mig_%d_up.sql", t3.Unix()), IsUp: true, Sql: "mig_3_up_sql"},
 			},
+			printer: "PrintUpMigration",
 		},
 		{
 			name:  "execute pop",
@@ -446,12 +462,14 @@ func TestRun(t *testing.T) {
 			expected: []models.ExecutionContext{
 				{Timestamp: t2.Unix(), Name: fmt.Sprintf("mig_%d_down.sql", t2.Unix()), IsUp: false, Sql: "mig_2_down_sql"},
 			},
+			printer: "PrintDownMigration",
 		},
 		{
 			name:     "does not execute any migration if dry-run is provided",
 			inDB:     []int64{},
 			flags:    []string{"-time=2020-10-24T10:00:00Z", "-dry-run=true"},
 			expected: []models.ExecutionContext{},
+			printer:  "PrintUpMigration",
 		},
 	}
 
@@ -477,13 +495,18 @@ func TestRun(t *testing.T) {
 				mockedModels.On("Execute", e).Return(nil)
 			}
 
+			mp := mockedPrinter{}
+			if v.printer != "" {
+				mp.On(v.printer, mock.Anything)
+			}
+
 			r := Run{
 				CommandBase: CommandBase{
 					Filesystem: &fsystem,
 					Timer:      timer.Timer{Now: getNow},
 					Models:     &mockedModels,
 					Flags:      v.flags,
-					Printer:    &mockedPrinter{},
+					Printer:    &mp,
 				},
 			}
 			_ = r.Run()

@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
 	"github.com/spf13/afero"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"os"
 	"reflect"
@@ -114,7 +115,7 @@ func TestCreateInitFile(t *testing.T) {
 
 	for i := 0; i < len(table); i++ {
 		test := table[i]
-		runner := Runner{Flags: test.flags, Fs: &filesystem.ImplFilesystem{Fs: test.fs}, Printer: &mockedPrinter{}}
+		runner := Runner{Flags: test.flags, Fs: &filesystem.ImplFilesystem{Fs: test.fs}}
 
 		err := runner.createInitFile()
 
@@ -159,13 +160,16 @@ func TestRunnerRun(t *testing.T) {
 
 	fs := afero.NewMemMapFs()
 	fsystem := &filesystem.ImplFilesystem{Fs: fs}
+	mp := mockedPrinter{}
+
+	mp.On("SetNoColor", mock.Anything)
 
 	runner := Runner{
 		Fs:         fsystem,
 		Subcommand: cmdInit,
 		Flags:      []string{"-name=main_db", "-credentials=postgres:pg_pass"},
 		Connector:  connector,
-		Printer:    &mockedPrinter{},
+		Printer:    &mp,
 	}
 
 	err := runner.Run()

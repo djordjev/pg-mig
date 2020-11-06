@@ -11,6 +11,8 @@ const (
 	colorSuccess = "\033[32m"
 	colorUp      = "\033[36m"
 	colorDown    = "\033[35m"
+	colorInDB    = "\033[33m"
+	colorOnFS    = "\033[35m"
 )
 
 type Printer interface {
@@ -18,6 +20,7 @@ type Printer interface {
 	PrintDownMigration(text string)
 	PrintError(text string)
 	PrintSuccess(text string)
+	PrintMigrations(date string, onFS string, inDB string)
 
 	SetNoColor(color bool)
 }
@@ -61,6 +64,25 @@ func (p *ImplPrinter) PrintSuccess(text string) {
 	}
 
 	fmt.Println(colorSuccess, "✔️ ", text, colorReset)
+}
+
+func (p *ImplPrinter) PrintMigrations(date string, onFS string, inDB string) {
+	var db, fs string
+
+	if onFS != "" {
+		fs = fmt.Sprintf("fs:%s", onFS)
+	}
+
+	if inDB != "" {
+		db = fmt.Sprintf("db: %s", inDB)
+	}
+
+	if p.NoColor {
+		fmt.Println(fmt.Sprintf("%s   |   %s / %s", date, fs, db))
+		return
+	}
+
+	fmt.Println(date, "   |   ", colorOnFS, fs, colorReset, " / ", colorInDB, db, colorReset)
 }
 
 func (p *ImplPrinter) SetNoColor(color bool) {
