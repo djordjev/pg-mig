@@ -1,6 +1,7 @@
 package timer
 
 import (
+	"fmt"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
@@ -51,16 +52,24 @@ func TestParseAnyTime(t *testing.T) {
 			res:  time.Time{},
 			err:  &timerError,
 		},
+		{
+			time: fmt.Sprintf("%d", t1.Unix()),
+			res: t1,
+			err: nil,
+		},
 	}
 
 	for _, v := range table {
-		currentTimer := Timer{Now: now}
-		t, err := currentTimer.ParseTime(v.time)
-		r.Equal(t, v.res)
-		if v.err != nil {
-			r.EqualError(err, *v.err)
-		} else {
-			r.NoError(err)
-		}
+		t.Run(v.time, func (t *testing.T) {
+			currentTimer := Timer{Now: now}
+			time, err := currentTimer.ParseTime(v.time)
+			isEqual := v.res.Equal(time)
+			r.True(isEqual)
+			if v.err != nil {
+				r.EqualError(err, *v.err)
+			} else {
+				r.NoError(err)
+			}
+		})
 	}
 }

@@ -2,6 +2,7 @@ package timer
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 )
 
@@ -24,6 +25,12 @@ func (timer Timer) ParseTime(inputTime string) (time.Time, error) {
 		dateNoTimezone,
 		dateNoTime,
 		onlyTime,
+	}
+
+	// Check if it's unix timestamp
+	ts, err := strconv.ParseInt(inputTime, 10, 64)
+	if err == nil {
+		return time.Unix(ts, 0), nil
 	}
 
 	for _, format := range formats {
