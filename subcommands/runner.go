@@ -146,7 +146,7 @@ func (runner *Runner) createInitFile() error {
 		return fmt.Errorf("run error: unable to parse flags %+q", runner.Flags)
 	}
 
-	if help != nil {
+	if help != nil && *help == true {
 		flagSet.PrintDefaults()
 		return nil
 	}

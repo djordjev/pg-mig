@@ -25,7 +25,7 @@ func (squash *Squash) Run() error {
 		return fmt.Errorf("squash command error: unable to parse program flags %w", err)
 	}
 
-	if help != nil {
+	if help != nil && *help == true {
 		flagSet.PrintDefaults()
 		return nil
 	}
