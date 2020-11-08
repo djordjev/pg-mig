@@ -23,7 +23,7 @@ func TestLoadWithFile(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	fsystem := &ImplFilesystem{Fs: fs}
 
-	err := afero.WriteFile(fs, configFileName, []byte(validContent), 0644)
+	err := afero.WriteFile(fs, configFileName, []byte(validContent), 0666)
 	if err != nil {
 		t.Log("Can't write test file in TestLoadWithFile")
 		t.Fail()
@@ -72,7 +72,7 @@ func TestLoadInvalidFormat(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	fsystem := &ImplFilesystem{Fs: fs}
 
-	err := afero.WriteFile(fs, configFileName, []byte("not a json"), 0644)
+	err := afero.WriteFile(fs, configFileName, []byte("not a json"), 0666)
 	if err != nil {
 		t.Log("Can't write test file in TestLoadInvalidFormat")
 		t.Fail()

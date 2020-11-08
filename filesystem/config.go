@@ -43,7 +43,7 @@ func (fs *ImplFilesystem) StoreConfig(config Config) error {
 		return fmt.Errorf("filesystem error: unable to serialize config data %w", err)
 	}
 
-	err = afs.WriteFile(configFileName, data, 0644)
+	err = afs.WriteFile(configFileName, data, 0666)
 	if err != nil {
 		return fmt.Errorf("filesystem error: unable to write config file %w", err)
 	}

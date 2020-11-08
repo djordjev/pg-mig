@@ -12,4 +12,4 @@ services:
       - POSTGRES_PASSWORD=pg_pass
       - POSTGRES_DB=main_db
     volumes:
-      - './workspace:/usr/pg-mig/workspace'
+      - './db/workspace:/usr/pg-mig/workspace'

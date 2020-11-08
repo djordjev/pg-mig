@@ -86,7 +86,7 @@ func TestGetFileTimestamps(t *testing.T) {
 		},
 	}
 
-	afero.WriteFile(fs, configFileName, []byte(validContent), 0644)
+	afero.WriteFile(fs, configFileName, []byte(validContent), 0666)
 
 	for index, file := range files {
 		time, _ := time.Parse(time.RFC3339, file.time)
@@ -94,10 +94,10 @@ func TestGetFileTimestamps(t *testing.T) {
 		upFN := fmt.Sprintf("mig_%d%s_up.sql", time.Unix(), file.name)
 		dnFN := fmt.Sprintf("mig_%d%s_down.sql", time.Unix(), file.name)
 
-		afero.WriteFile(fs, upFN, []byte("demo up content"), 0644)
-		afero.WriteFile(fs, dnFN, []byte("demo down content"), 0644)
+		afero.WriteFile(fs, upFN, []byte("demo up content"), 0666)
+		afero.WriteFile(fs, dnFN, []byte("demo down content"), 0666)
 
-		afero.WriteFile(fs, fmt.Sprintf("random_file_%d", index), []byte("rand"), 0644)
+		afero.WriteFile(fs, fmt.Sprintf("random_file_%d", index), []byte("rand"), 0666)
 	}
 
 	table := []struct {
@@ -191,8 +191,8 @@ func TestReadMigrationContent(t *testing.T) {
 	file := MigrationFile{Up: "mig_123_up.sql", Down: "mig_123_down.sql", Timestamp: 123}
 	config := Config{}
 
-	afero.WriteFile(fs, "mig_123_up.sql", []byte("up mig"), 0644)
-	afero.WriteFile(fs, "mig_123_down.sql", []byte("down mig"), 0644)
+	afero.WriteFile(fs, "mig_123_up.sql", []byte("up mig"), 0666)
+	afero.WriteFile(fs, "mig_123_down.sql", []byte("down mig"), 0666)
 
 	content, err := fsystem.ReadMigrationContent(file, DirectionUp, config)
 	if err != nil {
@@ -271,16 +271,16 @@ func TestSquash(t *testing.T) {
 			fs := afero.NewMemMapFs()
 			fsystem := &ImplFilesystem{Fs: fs}
 
-			afero.WriteFile(fs, "mig_1_up.sql", []byte("up mig 1"), 0644)
-			afero.WriteFile(fs, "mig_1_down.sql", []byte("down mig 1"), 0644)
+			afero.WriteFile(fs, "mig_1_up.sql", []byte("up mig 1"), 0666)
+			afero.WriteFile(fs, "mig_1_down.sql", []byte("down mig 1"), 0666)
 
-			afero.WriteFile(fs, "mig_2_up.sql", []byte("up mig 2"), 0644)
-			afero.WriteFile(fs, "mig_2_down.sql", []byte("down mig 2"), 0644)
+			afero.WriteFile(fs, "mig_2_up.sql", []byte("up mig 2"), 0666)
+			afero.WriteFile(fs, "mig_2_down.sql", []byte("down mig 2"), 0666)
 
-			afero.WriteFile(fs, "mig_3_up.sql", []byte("up mig 3"), 0644)
-			afero.WriteFile(fs, "mig_3_down.sql", []byte("down mig 3"), 0644)
+			afero.WriteFile(fs, "mig_3_up.sql", []byte("up mig 3"), 0666)
+			afero.WriteFile(fs, "mig_3_down.sql", []byte("down mig 3"), 0666)
 
-			afero.WriteFile(fs, configFileName, []byte(validContent), 0644)
+			afero.WriteFile(fs, configFileName, []byte(validContent), 0666)
 
 			err := fsystem.Squash(test.files)
 

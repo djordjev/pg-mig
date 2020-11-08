@@ -1,4 +1,3 @@
 #!/bin/sh
 
-cd /usr/pg-mig
-./pg-mig init -name="$POSTGRES_DB" -credentials="$POSTGRES_USER":"$POSTGRES_PASSWORD" -path=./workspace
+./pg-mig init -name=main_db -credentials=postgres:pg_pass -path=./workspace
