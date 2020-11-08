@@ -19,6 +19,11 @@ func (fs *ImplFilesystem) CreateMigrationFile(name string, location string) erro
 		return fmt.Errorf("filesystem error: unable to create migration file %w", err)
 	}
 
+	err = fs.Fs.Chmod(filename, 0666)
+	if err != nil {
+		return fmt.Errorf("filesystem error: unable to set permissions on file %w", err)
+	}
+
 	return nil
 }
 
@@ -112,6 +117,12 @@ func (fs *ImplFilesystem) writeFile(migrations []string, name string, config Con
 		err = fmt.Errorf("filesystem error: unable to create migration file for squash %w", err)
 		return
 	}
+
+	err = fs.Fs.Chmod(filename, 0666)
+	if err != nil {
+		return fmt.Errorf("filesystem error: unable to set permissions on file %w", err)
+	}
+
 
 	defer file.Close()
 
