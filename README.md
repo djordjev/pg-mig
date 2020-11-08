@@ -115,3 +115,5 @@ to the database.
 This command does not accept any flags.
 
 ## Usage with docker
+
+./pg-mig init -name="main_db" -credentials="postgres:pg_pass"

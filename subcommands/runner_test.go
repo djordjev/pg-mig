@@ -70,7 +70,7 @@ func TestCreateInitFile(t *testing.T) {
 			},
 			fs:                afero.NewMemMapFs(),
 			hasError:          false,
-			configFileContent: fmt.Sprintf("{\"db_name\":\"main_db\",\"path\":\"%s\",\"db_url\":\"localhost\",\"credentials\":\"postgres:pg_pass\",\"port\":5432,\"ssl_mode\":\"disable\",\"no_color\":false}", wd),
+			configFileContent: fmt.Sprintf("{\"db_name\":\"main_db\",\"path\":\"%s\",\"db_url\":\"\",\"credentials\":\"postgres:pg_pass\",\"port\":5432,\"ssl_mode\":\"disable\",\"no_color\":false}", wd),
 		},
 		{
 			flags: []string{
@@ -80,7 +80,7 @@ func TestCreateInitFile(t *testing.T) {
 			},
 			fs:                afero.NewMemMapFs(),
 			hasError:          false,
-			configFileContent: "{\"db_name\":\"main_db2\",\"path\":\"some_path\",\"db_url\":\"localhost\",\"credentials\":\"pgs\",\"port\":5432,\"ssl_mode\":\"disable\",\"no_color\":false}",
+			configFileContent: "{\"db_name\":\"main_db2\",\"path\":\"some_path\",\"db_url\":\"\",\"credentials\":\"pgs\",\"port\":5432,\"ssl_mode\":\"disable\",\"no_color\":false}",
 		},
 		{
 			flags: []string{

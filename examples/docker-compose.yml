@@ -2,12 +2,14 @@ version: "3.7"
 
 services:
   db:
-    image: postgres
+    build:
+      context: ./db
     container_name: db
-    hostname: db.bwx.local
     ports:
       - 5432:5432
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=pg_pass
       - POSTGRES_DB=main_db
+    volumes:
+      - './workspace:/usr/pg-mig/workspace'
