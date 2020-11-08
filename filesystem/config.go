@@ -73,7 +73,7 @@ func (fs *ImplFilesystem) LoadConfig() (Config, error) {
 // GetConnectionString returns string for connecting on DB
 func (config *Config) GetConnectionString() (string, error) {
 
-	if config.Credentials == "" || config.DbName == "" || config.Port == 0 {
+	if config.Credentials == "" || config.DbName == "" || config.DbURL == "" || config.Port == 0 {
 		return "", errors.New("filesystem error: invalid data in config file")
 	}
 
