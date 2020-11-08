@@ -115,5 +115,86 @@ to the database.
 This command does not accept any flags.
 
 ## Usage with docker
+When running PostgreSQL in docker container it can be handy to have `pg-mig` installed directly in container.
+That way it's not needed to have `pg-mig` installed on development machine. Docker multi-stage builds come 
+handy in situations like this.
 
-./pg-mig init -name="main_db" -credentials="postgres:pg_pass"
+First create a `Dockerfile`
+
+```dockerfile
+FROM golang:1.15.4-alpine3.12 AS builder
+
+RUN apk update && apk add git
+
+WORKDIR "/"
+RUN ["git", "clone", "https://github.com/djordjev/pg-mig"]
+
+WORKDIR "/pg-mig"
+RUN ["go",  "build",  "-o", "./build/pg-mig", "./cmd/pg-mig/main.go"]
+
+FROM postgres:13.0-alpine
+
+COPY ./workspace/ /usr/pg-mig/workspace/
+
+COPY --from=builder /pg-mig/build/pg-mig /usr/pg-mig/pg-mig
+
+RUN chmod -R 777 /usr/pg-mig
+
+EXPOSE 5432
+```
+
+Then in `docker-compose`:
+```yaml
+version: "3.7"
+
+services:
+  db:
+    build:
+      context: ./db
+    container_name: db
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=pg_pass
+      - POSTGRES_DB=main_db
+    volumes:
+      - './db/workspace:/usr/pg-mig/workspace'
+
+```
+
+Few things to note:
+1. We use golang container to build `pg-mig` and copy executable into final `postgres` container. That way
+final container is becoming more lightweight, since everything form `builder` container is thrown out except
+the main executable.
+2. Binding local `workspace` folder to `/usr/pg-mig/workspace` will make all files in container accessible
+on the local filesystem. This is important with creating new migrations.
+
+After a container has been run with 
+```shell script
+docker-compose up db
+```
+you can exec into it
+```shell script
+docker exec -it db sh
+```
+
+move to `usr/pg-mig`
+```shell script
+cd /usr/pg-mig
+```
+
+run init
+```shell script
+./pg-mig init -name=main_db -credentials=postgres:pg_pass -path=./workspace
+```
+
+run add 
+```shell script
+./pg-mig add -name="some name for migration"
+```
+
+execute migrations
+```shell script
+./pg-mig run
+```
