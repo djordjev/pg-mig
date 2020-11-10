@@ -3,6 +3,7 @@ package models
 import (
 	"context"
 	"github.com/jackc/pgx/v4"
+	"time"
 
 	"github.com/jackc/pgconn"
 )
@@ -20,7 +21,7 @@ type Models interface {
 	CreateMetaTable() error
 	GetMigrationsList() ([]int64, error)
 	Execute(ExecutionContext) error
-	SquashMigrations(int64, int64, int64) error
+	SquashMigrations(time.Time, time.Time, int64) error
 }
 
 type ExecutionContext struct {

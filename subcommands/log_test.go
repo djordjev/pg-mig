@@ -78,8 +78,6 @@ func TestLog(t *testing.T) {
 		},
 	}
 
-	fmt.Println("args log_test ->", table[0].timerArgs[0].date)
-
 	for _, test := range table {
 		t.Run(test.name, func(t *testing.T) {
 			r := require.New(t)

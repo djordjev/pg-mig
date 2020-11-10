@@ -48,7 +48,7 @@ func (squash *Squash) Run() error {
 	last := inDB[len(inDB)-1]
 
 	// Safe to squash migrations
-	err = squash.Models.SquashMigrations(from.Unix(), to.Unix(), last)
+	err = squash.Models.SquashMigrations(from, to, last)
 	if err != nil {
 		return err
 	}
@@ -62,7 +62,7 @@ func (squash *Squash) Run() error {
 }
 
 func (squash *Squash) getSquash(from time.Time, to time.Time) (migrations filesystem.MigrationFileList, inDB []int64, err error) {
-	migrations, err = squash.Filesystem.GetFileTimestamps(from, to)
+	migrations, err = squash.Filesystem.GetFileTimestamps(from.Add(-1*time.Millisecond), to)
 	if err != nil {
 		return
 	}

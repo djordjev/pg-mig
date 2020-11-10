@@ -240,9 +240,9 @@ func TestSquash(t *testing.T) {
 			deletedFiles:   []string{"mig_1_up.sql", "mig_2_up.sql", "mig_3_up.sql", "mig_1_down.sql", "mig_2_down.sql", "mig_3_down.sql"},
 			remainingFiles: []string{"mig_3_squashed_up.sql", "mig_3_squashed_down.sql"},
 			upFilename:     "mig_3_squashed_up.sql",
-			upContent:      "-- migration 1 UP\nup mig 1\n-- migration 2 UP\nup mig 2\n-- migration 3 UP\nup mig 3\n",
+			upContent:      "\n-- migration 1 UP\nup mig 1\n\n-- migration 2 UP\nup mig 2\n\n-- migration 3 UP\nup mig 3\n",
 			downFilename:   "mig_3_squashed_down.sql",
-			downContent:    "-- migration 3 DOWN\ndown mig 3\n-- migration 2 DOWN\ndown mig 2\n-- migration 1 DOWN\ndown mig 1\n",
+			downContent:    "\n-- migration 3 DOWN\ndown mig 3\n\n-- migration 2 DOWN\ndown mig 2\n\n-- migration 1 DOWN\ndown mig 1\n",
 		},
 		{
 			name: "successfully squashes first two files",
@@ -253,9 +253,9 @@ func TestSquash(t *testing.T) {
 			deletedFiles:   []string{"mig_1_up.sql", "mig_2_up.sql", "mig_1_down.sql", "mig_2_down.sql"},
 			remainingFiles: []string{"mig_2_squashed_up.sql", "mig_2_squashed_down.sql", "mig_3_up.sql", "mig_3_down.sql"},
 			upFilename:     "mig_2_squashed_up.sql",
-			upContent:      "-- migration 1 UP\nup mig 1\n-- migration 2 UP\nup mig 2\n",
+			upContent:      "\n-- migration 1 UP\nup mig 1\n\n-- migration 2 UP\nup mig 2\n",
 			downFilename:   "mig_2_squashed_down.sql",
-			downContent:    "-- migration 2 DOWN\ndown mig 2\n-- migration 1 DOWN\ndown mig 1\n",
+			downContent:    "\n-- migration 2 DOWN\ndown mig 2\n\n-- migration 1 DOWN\ndown mig 1\n",
 		},
 		{
 			name:           "returns error",

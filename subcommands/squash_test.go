@@ -94,12 +94,14 @@ func TestSquashRun(t *testing.T) {
 			toStr := strings.Split(test.flags[1], "=")
 			to, _ := time.Parse(time.RFC3339, toStr[1])
 
-			mockedFS.On("GetFileTimestamps", from, to).Return(test.files, test.filesError).Once()
+			mockedFS.On("GetFileTimestamps", from.Add(-1*time.Millisecond), to).
+				Return(test.files, test.filesError).Once()
+
 			mockedMod.On("GetMigrationsList").Return(test.inDB, test.inDBError).Once()
 
 			if !test.skipSquash {
 				mockedFS.On("Squash", test.files).Return(nil).Once()
-				mockedMod.On("SquashMigrations", from.Unix(), to.Unix(), test.squashedName).
+				mockedMod.On("SquashMigrations", from, to, test.squashedName).
 					Return(nil).Once()
 			}
 

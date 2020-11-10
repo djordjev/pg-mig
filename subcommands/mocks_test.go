@@ -15,7 +15,7 @@ type mockedModels struct {
 	executeError           error
 }
 
-func (m *mockedModels) SquashMigrations(i int64, i2 int64, i3 int64) error {
+func (m *mockedModels) SquashMigrations(i time.Time, i2 time.Time, i3 int64) error {
 	c := m.Called(i, i2, i3)
 	return c.Error(0)
 }

@@ -101,8 +101,11 @@ single migration.**
 ```
 
 **Available flags for `squash` command:**
-- *from* - start date for squash.
+- *from* - start date for squash. 
 - *to* - end date for squash.
+
+Note: for squash command both *from* and *to* values are inclusive (meaning if there's a migration with
+exact the same time as in the flag it will be included in squash). 
 
 ### log
 Similar to git log command. Prints migrations present on filesystem and those that are already applied

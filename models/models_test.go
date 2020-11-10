@@ -286,10 +286,10 @@ func TestSquashMigrations(t *testing.T) {
 			to := int64(10000)
 			name := int64(900)
 
-			expectedDelQuery := fmt.Sprintf("delete from %s where ts >= %d and ts <= %d;",
-				tableName, from, to)
+			expectedDelQuery := fmt.Sprintf("delete from %s where ts >= $1 and ts <= $2;", tableName)
 
-			tx.On("Exec", mock.Anything, expectedDelQuery, mock.Anything).
+			expectedTimes := []interface{}{time.Unix(from, 0), time.Unix(to, 0)}
+			tx.On("Exec", mock.Anything, expectedDelQuery, expectedTimes).
 				Return(pgconn.CommandTag{}, test.delError).Once()
 
 			expectedAddQuery := fmt.Sprintf("insert into %s (ts) values ($1);", tableName)
@@ -303,7 +303,7 @@ func TestSquashMigrations(t *testing.T) {
 
 			var err error
 			if test.commitError == nil {
-				err = m.SquashMigrations(from, to, name)
+				err = m.SquashMigrations(time.Unix(from, 0), time.Unix(to, 0), name)
 
 				if test.returnError {
 					r.Error(err)
@@ -312,7 +312,7 @@ func TestSquashMigrations(t *testing.T) {
 				}
 			} else {
 				r.PanicsWithError(test.commitError.Error(), func() {
-					err = m.SquashMigrations(from, to, name)
+					err = m.SquashMigrations(time.Unix(from, 0), time.Unix(to, 0), name)
 				})
 			}
 

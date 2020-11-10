@@ -30,16 +30,18 @@ func (fs *ImplFilesystem) CreateMigrationFile(name string, location string) erro
 // DeleteMigrationFiles - removed given migration files from FS
 func (fs *ImplFilesystem) deleteMigrationFiles(list MigrationFileList) error {
 	for _, file := range list {
-		up, down, err := fs.getMigrationsForTimestamp(file.Timestamp)
+		config, err := fs.LoadConfig()
 		if err != nil {
 			return err
 		}
 
+		up := filepath.Join(config.Path, file.Up)
 		err = fs.Fs.Remove(up)
 		if err != nil {
 			return err
 		}
 
+		down := filepath.Join(config.Path, file.Down)
 		err = fs.Fs.Remove(down)
 		if err != nil {
 			return err
@@ -70,7 +72,7 @@ func (fs *ImplFilesystem) Squash(files MigrationFileList) (err error) {
 			return err
 		}
 
-		upComment := fmt.Sprintf("-- migration %d UP\n", file.Timestamp)
+		upComment := fmt.Sprintf("\n-- migration %d UP\n", file.Timestamp)
 		up = append(up, fmt.Sprintf("%s%s%s", upComment, upContent, "\n"))
 
 		downContent, err := fs.ReadMigrationContent(file, DirectionDown, config)
@@ -78,7 +80,7 @@ func (fs *ImplFilesystem) Squash(files MigrationFileList) (err error) {
 			return err
 		}
 
-		downComment := fmt.Sprintf("-- migration %d DOWN\n", file.Timestamp)
+		downComment := fmt.Sprintf("\n-- migration %d DOWN\n", file.Timestamp)
 		down = append(down, fmt.Sprintf("%s%s%s", downComment, downContent, "\n"))
 	}
 
@@ -123,11 +125,10 @@ func (fs *ImplFilesystem) writeFile(migrations []string, name string, config Con
 		return fmt.Errorf("filesystem error: unable to set permissions on file %w", err)
 	}
 
-
 	defer file.Close()
 
 	for _, mig := range migrations {
-		file.WriteString(mig)
+		_, err = file.WriteString(mig)
 	}
 
 	return
@@ -146,8 +147,8 @@ func (fs *ImplFilesystem) getMigrationsForTimestamp(ts int64) (up string, down s
 		return
 	}
 
-	upPattern := regexp.MustCompile(fmt.Sprintf("^mig_%d*_up.sql$", ts))
-	downPattern := regexp.MustCompile(fmt.Sprintf("^mig_%d*_down.sql$", ts))
+	upPattern := regexp.MustCompile(fmt.Sprintf("^mig_%d.*_up.sql$", ts))
+	downPattern := regexp.MustCompile(fmt.Sprintf("^mig_%d.*_down.sql$", ts))
 
 	for _, file := range files {
 		if upPattern.FindString(file.Name()) != "" {

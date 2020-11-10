@@ -54,7 +54,7 @@ func (models *ImplModels) GetMigrationsList() ([]int64, error) {
 
 // SquashMigrations deletes all migration instances in meta table between given timestamps (both inclusive).
 // and writes a new squash migration with timestamp set to `to` variable value
-func (models *ImplModels) SquashMigrations(from int64, to int64, name int64) error {
+func (models *ImplModels) SquashMigrations(from time.Time, to time.Time, name int64) error {
 	tx, err := models.Db.Begin(context.Background())
 	if err != nil {
 		return fmt.Errorf("unable to start transaction %w", err)
@@ -67,9 +67,9 @@ func (models *ImplModels) SquashMigrations(from int64, to int64, name int64) err
 		}
 	}()
 
-	delQuery := fmt.Sprintf("delete from %s where ts >= %d and ts <= %d;", tableName, from, to)
+	delQuery := fmt.Sprintf("delete from %s where ts >= $1 and ts <= $2;", tableName)
 
-	_, err = tx.Exec(context.Background(), delQuery)
+	_, err = tx.Exec(context.Background(), delQuery, from, to)
 	if err != nil {
 		return fmt.Errorf("db error: unable to squash migrations %w", err)
 	}
