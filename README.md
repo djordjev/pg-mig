@@ -3,6 +3,13 @@
 # pg-mig
 Database-centric tool for running migrations against PostgreSQL database.
 
+This tool is somehow similar to git but for a database. Each database state is described as a serie of
+revisions (called migration). So it allows user to change between those revisions (similar to 
+`checkout` previous commit in git). It's compiled to executable to it doesn't require any runtime environment.
+Migrations are identified by creation timestamp, and the current state of applied migrations is stored
+in the database itself, so it's safe for developers to create multiple migrations in different git branches
+and later merge them together preserving an order of execution. 
+
 ## Basic principles
 Each incremental database upgrade is stored in 2 `.sql` files. A file with suffix `_up.sql` is used
 to upgrade database to a next revision. The file with suffix `_down.sql` is used to downgrade to a previous
