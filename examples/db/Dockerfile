@@ -10,6 +10,9 @@ RUN ["go",  "build",  "-o", "./build/pg-mig", "./cmd/pg-mig/main.go"]
 
 FROM postgres:13.0-alpine
 
+ENV PG_MIG_CONFIG_DIR=/usr/pg-mig/
+ENV PATH="/usr/pg-mig:${PATH}"
+
 COPY ./workspace/ /usr/pg-mig/workspace/
 
 COPY --from=builder /pg-mig/build/pg-mig /usr/pg-mig/pg-mig
