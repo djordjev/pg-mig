@@ -6,8 +6,9 @@ import (
 )
 
 type ImplFilesystem struct {
-	Fs     afero.Fs
-	GetNow func() time.Time
+	Fs        afero.Fs
+	GetNow    func() time.Time
+	ConfigDir string
 }
 
 type TimeGetter func() time.Time

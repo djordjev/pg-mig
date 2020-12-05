@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/spf13/afero"
+	"path"
 )
 
 // Config JSON type for storing database configuration
@@ -24,14 +25,22 @@ const configFileName = "pgmig.config.json"
 func (fs *ImplFilesystem) StoreConfig(config Config) error {
 	afs := &afero.Afero{Fs: fs.Fs}
 
-	exists, err := afs.Exists(configFileName)
+	var configLocation string
+
+	if fs.ConfigDir == "" {
+		configLocation = configFileName
+	} else {
+		configLocation = path.Join(fs.ConfigDir, configFileName)
+	}
+
+	exists, err := afs.Exists(configLocation)
 
 	if err != nil {
 		return fmt.Errorf("filesystem error: unable to check if confg already exists %w", err)
 	}
 
 	if exists {
-		err = afs.Remove(configFileName)
+		err = afs.Remove(configLocation)
 
 		if err != nil {
 			return fmt.Errorf("filesystem error: unable to overwrite existing config %w", err)
@@ -43,7 +52,7 @@ func (fs *ImplFilesystem) StoreConfig(config Config) error {
 		return fmt.Errorf("filesystem error: unable to serialize config data %w", err)
 	}
 
-	err = afs.WriteFile(configFileName, data, 0666)
+	err = afs.WriteFile(configLocation, data, 0666)
 	if err != nil {
 		return fmt.Errorf("filesystem error: unable to write config file %w", err)
 	}
@@ -56,7 +65,15 @@ func (fs *ImplFilesystem) LoadConfig() (Config, error) {
 	afs := &afero.Afero{Fs: fs.Fs}
 	config := Config{}
 
-	data, err := afs.ReadFile(configFileName)
+	var configLocation string
+
+	if fs.ConfigDir == "" {
+		configLocation = configFileName
+	} else {
+		configLocation = path.Join(fs.ConfigDir, configFileName)
+	}
+
+	data, err := afs.ReadFile(configLocation)
 
 	if err != nil {
 		return config, fmt.Errorf("filesystem error: unable to read config file %w", err)

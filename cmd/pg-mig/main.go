@@ -12,6 +12,8 @@ import (
 	"github.com/djordjev/pg-mig/subcommands"
 )
 
+const ConfigDirEnv = "PG_MIG_CONFIG_DIR"
+
 func main() {
 	printer := subcommands.ImplPrinter{NoColor: true}
 
@@ -20,10 +22,12 @@ func main() {
 		os.Exit(1)
 	}
 
+	configDir := os.Getenv(ConfigDirEnv)
+
 	runner := subcommands.Runner{
 		Subcommand: os.Args[1],
 		Flags:      os.Args[2:],
-		Fs:         &filesystem.ImplFilesystem{Fs: afero.NewOsFs(), GetNow: time.Now},
+		Fs:         &filesystem.ImplFilesystem{Fs: afero.NewOsFs(), GetNow: time.Now, ConfigDir: configDir},
 		Connector:  models.BuildConnector,
 		Timer:      timer.Timer{Now: time.Now},
 		Printer:    &printer,
