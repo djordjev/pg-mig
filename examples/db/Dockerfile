@@ -19,4 +19,6 @@ COPY --from=builder /pg-mig/build/pg-mig /usr/pg-mig/pg-mig
 
 RUN chmod -R 777 /usr/pg-mig
 
+RUN echo "pg-mig init -db=localhost -name=main_db -credentials=postgres:pg_pass -path=/usr/pg-mig/workspace -port=5432" >> /docker-entrypoint-initdb.d/init.sh
+
 EXPOSE 5432
