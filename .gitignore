@@ -19,3 +19,4 @@ build
 cmd/pg-mig/pgmig.config.json
 coverage.out
 .idea
+.DS_Store
