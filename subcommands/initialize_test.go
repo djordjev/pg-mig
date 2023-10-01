@@ -3,10 +3,11 @@ package subcommands
 import (
 	"context"
 	"errors"
+	"testing"
+
 	"github.com/djordjev/pg-mig/filesystem"
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
-	"testing"
 
 	"github.com/djordjev/pg-mig/models"
 )

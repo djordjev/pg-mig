@@ -4,10 +4,11 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"os"
+
 	"github.com/djordjev/pg-mig/filesystem"
 	"github.com/djordjev/pg-mig/models"
 	"github.com/djordjev/pg-mig/timer"
-	"os"
 )
 
 const cmdInit = "init"

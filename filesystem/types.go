@@ -1,14 +1,16 @@
 package filesystem
 
 import (
-	"github.com/spf13/afero"
 	"time"
+
+	"github.com/spf13/afero"
 )
 
 type ImplFilesystem struct {
-	Fs        afero.Fs
-	GetNow    func() time.Time
-	ConfigDir string
+	Fs             afero.Fs
+	GetNow         func() time.Time
+	ConfigDir      string
+	ExternalConfig *Config
 }
 
 type TimeGetter func() time.Time
