@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/spf13/afero"
 	"path"
+
+	"github.com/spf13/afero"
 )
 
 // Config JSON type for storing database configuration
@@ -62,6 +63,10 @@ func (fs *ImplFilesystem) StoreConfig(config Config) error {
 
 // LoadConfig - reads previously stored config file from current dir
 func (fs *ImplFilesystem) LoadConfig() (Config, error) {
+	if fs.ExternalConfig != nil {
+		return *fs.ExternalConfig, nil
+	}
+
 	afs := &afero.Afero{Fs: fs.Fs}
 	config := Config{}
 

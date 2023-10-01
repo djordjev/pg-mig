@@ -2,8 +2,9 @@ package models
 
 import (
 	"context"
-	"github.com/jackc/pgx/v4"
 	"time"
+
+	"github.com/jackc/pgx/v4"
 )
 
 const reconnectCount = 3
