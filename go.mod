@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/jackc/pgconn v1.6.4
-	github.com/jackc/pgproto3/v2 v2.0.2
+	github.com/jackc/pgproto3/v2 v2.3.3
 	github.com/jackc/pgx/v4 v4.8.1
 	github.com/spf13/afero v1.3.4
 	github.com/stretchr/testify v1.5.1
